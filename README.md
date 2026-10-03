@@ -15,8 +15,8 @@ A team-based mandala mission board with text/photo submissions, progress trackin
 
 GitHubやプログラミングに詳しくない方向けに、アカウントの準備から公開・参加者への配布までをまとめました。
 
-- [初心者向けガイド（Web版）](BEGINNER_GUIDE.md)
-- [配布・印刷用PDF（14ページ）](output/pdf/jc-beginner-guide.pdf)
+- [導入手順書（Web版）](BEGINNER_GUIDE.md)
+- [印刷用PDF（6ページ）](output/pdf/jc-beginner-guide.pdf)
 
 各段階でコピーできるAI依頼文、完了の目印、困ったときの確認方法を掲載しています。
 
