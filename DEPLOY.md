@@ -2,7 +2,16 @@
 
 ## 1. 自分のプロジェクトを用意する
 
-この公開リポジトリをForkまたはcloneし、Vercelへインポートします。独自のGitHubリポジトリを使う場合も、`.env*`、回答レポート、アップロード画像、`.private/` をコミットしないでください。
+[Use this template](https://github.com/Kaz1028/gts2026-mandala/generate) から自分のリポジトリを作成し、パソコンにcloneします。[CUSTOMIZE.md](CUSTOMIZE.md) に沿って公開設定とミッションを編集し、次を実行します。
+
+```bash
+npm ci
+npm run check:config
+npm test
+npm run setup:credentials
+```
+
+作成した自分のリポジトリを、新しいVercelプロジェクトとしてインポートします。元のGTS2026のプロジェクト・DB・写真ストレージは使用しません。独自のGitHubリポジトリを使う場合も、`.env*`、回答レポート、アップロード画像、`.private/` をコミットしないでください。
 
 Node.js 24系のVercel環境を推奨します。リポジトリの `vercel.json` が静的ページとAPIのルーティングを定義しています。ビルドコマンドの追加は不要です。
 
@@ -29,11 +38,7 @@ Node.js 24系のVercel環境を推奨します。リポジトリの `vercel.json
 | `POSTGRES_URL` | DBのプール接続URL。必須 |
 | `BLOB_READ_WRITE_TOKEN` | 写真保存用トークン |
 
-各秘密鍵・パスワードは次のコマンドをそれぞれ実行して別々に生成し、パスワード管理ツールへ保存してください。
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+上の `npm run setup:credentials` が、設定したチーム数に合わせて別々のパスワードを生成します。`.private/setup-*/setup.env` の値をVercelへ登録し、DBとBlobの値を補ってください。同じフォルダの `teams.csv` は運営者用の配布一覧です。これらはGitの対象外です。公開リポジトリ、Issue、AIチャットへ貼り付けないでください。再実行すると別のフォルダに新しく生成され、既存DBのパスワードは変更されません。
 
 初期チームの形式（プレースホルダーは必ず置き換える）:
 
@@ -41,7 +46,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 [{"team_number":1,"password":"<チーム専用に生成した16文字以上の値>"}]
 ```
 
-対応番号は1〜22。IDは `GTS2026_1` のように決まります。Vercelの設定欄には配列そのものを、`.env.local` では配列全体をシングルクォートで囲んで設定します。
+対応番号は1〜 `event.config.js` の `teamCount`。IDは `loginPrefix` と番号の組み合わせです（例：`LOCAL_1`）。Vercelの設定欄には外側のシングルクォートを除いた配列そのものを、`.env.local` では配列全体をシングルクォートで囲んで設定します。
 
 本番・プレビュー・開発では別のDBと秘密鍵を使用してください。必須の認証設定がなければログインは503を返します。設定後に再デプロイします。
 

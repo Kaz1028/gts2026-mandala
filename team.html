@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Reggae+One&family=RocknRoll+One&family=Mochiy+Pop+One&family=DotGothic16&family=Dela+Gothic+One&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="/event.config.js"></script>
+<script src="/event-branding.js" defer></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 :root, html, body { color-scheme: light only; }
@@ -307,7 +309,7 @@ textarea.mission-textarea:focus { border-color:#c4131f; }
 <div class="header">
   <div class="header-left">
     <span class="team-badge" id="teamBadge">TEAM —</span>
-    <span class="header-title">🦁 GTS2026</span>
+    <span class="header-title"><span data-event="emblem">🦁</span> <span data-event="eventName">GTS2026</span></span>
   </div>
   <div class="header-right">
     <div class="score-box">
@@ -406,7 +408,7 @@ function renderGrid(data) {
     div.className = 'cell';
     if (idx === 'center') {
       div.classList.add('center');
-      div.innerHTML = `<div class="cell-emblem">🦁</div><div class="cell-name">${data.center.name}</div>`;
+      div.innerHTML = `<div class="cell-emblem">${escHtml(window.EVENT_CONFIG.emblem)}</div><div class="cell-name">${data.center.name}</div>`;
     } else {
       const theme = data.themes[idx];
       const done  = theme.missions.filter(m => m.status === 'done').length;

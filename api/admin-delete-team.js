@@ -1,3 +1,4 @@
+const { config: event } = require('./lib/event-config');
 const { verifyToken, cors } = require('./lib/auth');
 const { deleteTeam } = require('./lib/db');
 
@@ -10,7 +11,7 @@ module.exports = async function handler(req, res) {
     if (user.role !== 'admin') return res.status(403).json({ error: '管理者権限が必要です' });
 
     const { team_number } = req.body || {};
-    if (!team_number || team_number < 1)
+    if (!Number.isInteger(team_number) || team_number < 1 || team_number > event.teamCount)
       return res.status(400).json({ error: '不正なチーム番号' });
 
     const rowCount = await deleteTeam(team_number);

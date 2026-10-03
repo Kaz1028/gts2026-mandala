@@ -1,3 +1,4 @@
+const event = require('../event.config');
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const fs = require('node:fs');
@@ -40,7 +41,7 @@ test('credential configuration and login boundaries (no external services)', asy
   const db = {
     async getTeamByLogin(id, pw) {
       dbCalls++;
-      return id === 'GTS2026_1' && pw === password
+      return id === (event.loginPrefix + '1') && pw === password
         ? { login_id: id, team_number: 1 } : null;
     },
     async initDB() { dbCalls++; },
@@ -79,8 +80,8 @@ test('credential configuration and login boundaries (no external services)', asy
       assert.equal(dbCalls, 0);
     });
     await t.test('team credentials are passed to the database and determine success', async () => {
-      assert.equal((await call(login, 'POST', { login_id: 'GTS2026_1', password: 'wrong' })).code, 401);
-      const res = await call(login, 'POST', { login_id: 'GTS2026_1', password });
+      assert.equal((await call(login, 'POST', { login_id: (event.loginPrefix + '1'), password: 'wrong' })).code, 401);
+      const res = await call(login, 'POST', { login_id: (event.loginPrefix + '1'), password });
       assert.equal(res.code, 200);
       assert.equal(res.data.role, 'team');
       assert.equal(res.data.team_number, 1);
@@ -118,13 +119,13 @@ test('credential configuration and login boundaries (no external services)', asy
       process.env.TEAM_CREDENTIALS_JSON = '[]';
       assert.deepEqual(getSeedTeams(), []);
       process.env.TEAM_CREDENTIALS_JSON = JSON.stringify([{ team_number: 1, password }]);
-      assert.deepEqual(getSeedTeams(), [{ team_number: 1, login_id: 'GTS2026_1', password }]);
+      assert.deepEqual(getSeedTeams(), [{ team_number: 1, login_id: (event.loginPrefix + '1'), password }]);
     });
     await t.test('malformed seed data is rejected without exposing its contents', () => {
       for (const raw of [
         'invalid', '{}', '[null]',
         JSON.stringify([{ team_number: 0, password }]),
-        JSON.stringify([{ team_number: 23, password }]),
+        JSON.stringify([{ team_number: event.teamCount + 1, password }]),
         JSON.stringify([{ team_number: 1, password: 'short' }]),
         JSON.stringify([{ team_number: 1, password }, { team_number: 1, password }]),
       ]) {
@@ -146,7 +147,7 @@ test('credential configuration and login boundaries (no external services)', asy
         await pg.initDB();
         assert.equal(queries.length, 4);
         assert.match(queries[3].text, /ON CONFLICT \(login_id\) DO NOTHING/);
-        assert.equal(queries[3].values[0], 'GTS2026_1');
+        assert.equal(queries[3].values[0], (event.loginPrefix + '1'));
         assert.equal(queries[3].values[2], 1);
         assert.ok(await require('../api/lib/passwords').verifyPassword(password, queries[3].values[1]));
         queries.length = 0;
@@ -185,10 +186,10 @@ test('team login page uses entered password, never automatic credentials', async
       createElement: element,
     },
     sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) },
-    window: { location: {} },
+    window: { location: {}, EVENT_CONFIG: event },
     async fetch(url, options) {
       requests.push({ url, body: JSON.parse(options.body) });
-      return { ok: true, async json() { return { token: 'test', role: 'team', team_number: 2 }; } };
+      return { ok: true, async json() { return { token: 'test', role: 'team', team_number: 1 }; } };
     },
   };
   const html = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
@@ -196,14 +197,15 @@ test('team login page uses entered password, never automatic credentials', async
   vm.runInNewContext(script, context);
   await elements.get('teamLoginBtn').listeners.click();
   assert.equal(requests.length, 0);
-  elements.get('modalGrid').children[1].listeners.click();
+  assert.equal(elements.get('modalGrid').children.length, event.teamCount);
+  elements.get('modalGrid').children[0].listeners.click();
   assert.equal(requests.length, 0);
   await elements.get('teamLoginBtn').listeners.click();
   assert.equal(requests.length, 0);
   const password = ' ' + randomBytes(16).toString('hex') + ' ';
   elements.get('teamPw').value = password;
   await elements.get('teamLoginBtn').listeners.click();
-  assert.deepEqual(requests, [{ url: '/api/auth/login', body: { login_id: 'GTS2026_2', password } }]);
+  assert.deepEqual(requests, [{ url: '/api/auth/login', body: { login_id: (event.loginPrefix + '1'), password } }]);
   assert.equal(context.window.location.href, '/team.html');
 });
 

@@ -6,7 +6,7 @@ A team-based mandala mission board with text/photo submissions, progress trackin
 
 ## できること
 
-- 22チームのログインと、テーマ別のミッション一覧
+- 設定に応じた1〜100チームのログインと、8テーマのミッション一覧
 - 記述回答、写真提出、チェック式の達成記録
 - 得点・ランク・達成演出
 - 管理者による進捗確認、特典管理、提出内容の確認
@@ -15,13 +15,14 @@ A team-based mandala mission board with text/photo submissions, progress trackin
 
 このリポジトリは**アプリのソースコード**です。運営中のイベントの参加者データ、写真、ログイン情報は含みません。自分のVercelプロジェクト・データベース・写真ストレージを用意して利用してください。GitHub PagesだけではAPIやDBは動きません。
 
-1. このリポジトリをForkまたはcloneします。
+1. [Use this template](https://github.com/Kaz1028/gts2026-mandala/generate) から、自分のGitHubリポジトリを作ります。
 2. Node.js 20以上（デプロイは24系推奨）で `npm ci` を実行します。
-3. [DEPLOY.md](DEPLOY.md) に沿ってVercel、Postgres、Blob、認証情報を設定します。
+3. [CUSTOMIZE.md](CUSTOMIZE.md) に沿って団体名・チーム数・ミッションを変更し、[DEPLOY.md](DEPLOY.md) に沿ってVercel、Postgres、Blob、認証情報を設定します。
 4. 管理者としてDBを初期化し、各チームへ個別にログイン情報を配布します。
 
 ```bash
 npm ci
+npm run check:config
 npm test
 npx vercel dev
 ```
@@ -30,7 +31,14 @@ npx vercel dev
 
 ## イベント内容を変える
 
-ミッション、配点、テーマ名は [api/lib/mandalaData.js](api/lib/mandalaData.js)、画面の表示は `index.html`・`team.html`・`admin.html` を編集します。チーム番号は現在1〜22固定です。増やす場合はログイン画面・設定検証・管理APIの上限を揃えて変更してください。
+まずは次の2ファイルを編集します。
+
+- [event.config.js](event.config.js)：団体名、イベント名、チーム数、ログインIDの接頭辞、基本色、アイコン
+- [missions.json](missions.json)：8テーマ、ミッション、回答形式、配点、ランク
+
+[変更ガイド](CUSTOMIZE.md)、[地域イベントのサンプル](examples/community-event)、[AIへの依頼文](AI_CUSTOMIZE_PROMPT.md) を用意しています。コードに慣れていない方は、サンプルと依頼文を使って調整できます。
+
+各団体が自分のアプリ・DB・写真ストレージを用意して運営する方式です。導入時の設定は必要で、管理画面だけですべてを変更する機能はありません。
 
 コードの公開は、GTS2026やJCIなどの名称・商標について権利を付与するものではありません。自分のイベントに合わせて名称や内容を調整してください。
 
@@ -45,7 +53,7 @@ npx vercel dev
 
 ## テスト
 
-`npm test` は秘密情報や外部サービスを使わず、認証、JWT、パスワードハッシュ、ログイン試行制限、入力画面の処理を検証します。実際のDB・Blobとの接続は、デプロイした環境で別途確認してください。
+`npm test` は秘密情報や外部サービスを使わず、認証、JWT、パスワードハッシュ、ログイン試行制限、入力画面、設定ファイル、サンプル、認証情報の生成を検証します。実際のDB・Blobとの接続は、デプロイした環境で別途確認してください。
 
 ## ライセンスと協力
 

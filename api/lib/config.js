@@ -1,3 +1,4 @@
+const { config: event } = require('./event-config');
 // Secrets are supplied by the server environment; never use built-in credentials.
 function requireSecret(name, minLength) {
   const value = process.env[name];
@@ -15,7 +16,7 @@ function getAuthConfig() {
   };
 }
 
-function getSeedTeams(maxTeams = 22) {
+function getSeedTeams(maxTeams = event.teamCount) {
   const raw = process.env.TEAM_CREDENTIALS_JSON;
   if (!raw) return []; // Existing databases do not need seed credentials.
   let teams;
@@ -33,7 +34,7 @@ function getSeedTeams(maxTeams = 22) {
       throw new Error(`TEAM_CREDENTIALS_JSON requires unique team numbers (1-${maxTeams}) and passwords of at least 16 characters`);
     }
     numbers.add(team.team_number);
-    return { team_number: team.team_number, login_id: `GTS2026_${team.team_number}`, password: team.password };
+    return { team_number: team.team_number, login_id: event.loginPrefix + team.team_number, password: team.password };
   });
 }
 

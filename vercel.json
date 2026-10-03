@@ -1,6 +1,8 @@
 {
   "version": 2,
   "builds": [
+    {"src":"event-branding.js","use":"@vercel/static"},
+    {"src":"event.config.js","use":"@vercel/static"},
     { "src": "index.html",  "use": "@vercel/static" },
     { "src": "team.html",   "use": "@vercel/static" },
     { "src": "admin.html",  "use": "@vercel/static" },
@@ -23,6 +25,8 @@
     { "src": "api/admin-delete-team.js", "use": "@vercel/node" }
   ],
   "routes": [
+    {"src":"/event-branding\\.js","dest":"/event-branding.js"},
+    {"src":"/event\\.config\\.js","dest":"/event.config.js"},
     { "src": "/api/setup",              "dest": "/api/setup.js" },
     { "src": "/api/auth/login",         "dest": "/api/auth-login.js" },
     { "src": "/api/auth/me",            "dest": "/api/auth-me.js" },

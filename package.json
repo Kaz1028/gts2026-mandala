@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod",
-    "test": "node --test tests/auth.test.js"
+    "test": "node --test tests/auth.test.js tests/config.test.js",
+    "check:config": "node scripts/check-config.cjs",
+    "setup:credentials": "node scripts/generate-credentials.cjs"
   },
   "dependencies": {
     "@vercel/blob": "^0.23.4",

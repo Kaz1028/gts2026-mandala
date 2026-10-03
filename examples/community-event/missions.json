@@ -1,0 +1,249 @@
+{
+  "center": {
+    "name": "まちの魅力を発見しよう"
+  },
+  "themes": [
+    {
+      "id": "theme_0",
+      "name": "歴史を知る",
+      "emblem": "🏛️",
+      "missions": [
+        {
+          "id": "m0_0",
+          "text": "地域の史跡や案内板を見つける",
+          "type": "check",
+          "points": 1,
+          "stars": 1
+        },
+        {
+          "id": "m0_1",
+          "text": "地域の歴史で初めて知ったことを記録する",
+          "type": "text",
+          "points": 2,
+          "stars": 2
+        },
+        {
+          "id": "m0_2",
+          "text": "撮影できる場所で、歴史を感じる風景を撮る",
+          "type": "photo",
+          "points": 3,
+          "stars": 3
+        }
+      ]
+    },
+    {
+      "id": "theme_1",
+      "name": "食の魅力",
+      "emblem": "🍙",
+      "missions": [
+        {
+          "id": "m1_0",
+          "text": "地域の食材や名物を見つける",
+          "type": "check",
+          "points": 1,
+          "stars": 1
+        },
+        {
+          "id": "m1_1",
+          "text": "地域ならではの食の魅力を一つ紹介する",
+          "type": "text",
+          "points": 2,
+          "stars": 2
+        },
+        {
+          "id": "m1_2",
+          "text": "撮影許可を得て、名物や食材の写真を撮る",
+          "type": "photo",
+          "points": 3,
+          "stars": 3
+        }
+      ]
+    },
+    {
+      "id": "theme_2",
+      "name": "地域の仕事",
+      "emblem": "🛠️",
+      "missions": [
+        {
+          "id": "m2_0",
+          "text": "地域の産業や商店について調べる",
+          "type": "check",
+          "points": 1,
+          "stars": 1
+        },
+        {
+          "id": "m2_1",
+          "text": "地域の仕事と暮らしのつながりを記録する",
+          "type": "text",
+          "points": 2,
+          "stars": 2
+        },
+        {
+          "id": "m2_2",
+          "text": "撮影可能な場所で、地域の仕事を伝える風景を撮る",
+          "type": "photo",
+          "points": 3,
+          "stars": 3
+        }
+      ]
+    },
+    {
+      "id": "theme_3",
+      "name": "防災を学ぶ",
+      "emblem": "🧯",
+      "missions": [
+        {
+          "id": "m3_0",
+          "text": "公開されている避難場所の案内を確認する",
+          "type": "check",
+          "points": 1,
+          "stars": 1
+        },
+        {
+          "id": "m3_1",
+          "text": "災害時に備えて自分たちができることを書く",
+          "type": "text",
+          "points": 2,
+          "stars": 2
+        },
+        {
+          "id": "m3_2",
+          "text": "通行を妨げず、防災案内の写真を撮る",
+          "type": "photo",
+          "points": 3,
+          "stars": 3
+        }
+      ]
+    },
+    {
+      "id": "theme_4",
+      "name": "環境を考える",
+      "emblem": "🌱",
+      "missions": [
+        {
+          "id": "m4_0",
+          "text": "地域の環境への取り組みを見つける",
+          "type": "check",
+          "points": 1,
+          "stars": 1
+        },
+        {
+          "id": "m4_1",
+          "text": "自分たちが続けられる環境への取り組みを書く",
+          "type": "text",
+          "points": 2,
+          "stars": 2
+        },
+        {
+          "id": "m4_2",
+          "text": "自然や環境への工夫を伝える写真を撮る",
+          "type": "photo",
+          "points": 3,
+          "stars": 3
+        }
+      ]
+    },
+    {
+      "id": "theme_5",
+      "name": "交流する",
+      "emblem": "🤝",
+      "missions": [
+        {
+          "id": "m5_0",
+          "text": "チーム内で自己紹介し、お互いの関心を知る",
+          "type": "check",
+          "points": 1,
+          "stars": 1
+        },
+        {
+          "id": "m5_1",
+          "text": "仲間から学んだことを、個人情報を含めず記録する",
+          "type": "text",
+          "points": 2,
+          "stars": 2
+        },
+        {
+          "id": "m5_2",
+          "text": "全員の同意を得て、チームの活動の様子を撮る",
+          "type": "photo",
+          "points": 3,
+          "stars": 3
+        }
+      ]
+    },
+    {
+      "id": "theme_6",
+      "name": "新しい発見",
+      "emblem": "🔎",
+      "missions": [
+        {
+          "id": "m6_0",
+          "text": "普段見過ごしていたまちの魅力を探す",
+          "type": "check",
+          "points": 1,
+          "stars": 1
+        },
+        {
+          "id": "m6_1",
+          "text": "他の人にも伝えたい発見を記録する",
+          "type": "text",
+          "points": 2,
+          "stars": 2
+        },
+        {
+          "id": "m6_2",
+          "text": "立ち入り可能な場所から、おすすめの風景を撮る",
+          "type": "photo",
+          "points": 3,
+          "stars": 3
+        }
+      ]
+    },
+    {
+      "id": "theme_7",
+      "name": "未来を描く",
+      "emblem": "✨",
+      "missions": [
+        {
+          "id": "m7_0",
+          "text": "活動を振り返り、まちの未来を話し合う",
+          "type": "check",
+          "points": 1,
+          "stars": 1
+        },
+        {
+          "id": "m7_1",
+          "text": "青年会議所として取り組みたい活動を一つ提案する",
+          "type": "text",
+          "points": 2,
+          "stars": 2
+        },
+        {
+          "id": "m7_2",
+          "text": "個人情報が映らない形で、チームの提案を写真に残す",
+          "type": "photo",
+          "points": 3,
+          "stars": 3
+        }
+      ]
+    }
+  ],
+  "ranks": [
+    {
+      "minPct": 0,
+      "name": "まちの探検家"
+    },
+    {
+      "minPct": 30,
+      "name": "まちの発見者"
+    },
+    {
+      "minPct": 60,
+      "name": "まちの案内人"
+    },
+    {
+      "minPct": 100,
+      "name": "まちの魅力マスター"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+const { config: event } = require('../../lib/event-config');
 const { verifyToken, cors } = require('../../lib/auth');
 const { getTeamDetail } = require('../../lib/db');
 const { MANDALA_THEMES, TOTAL_MISSIONS, TOTAL_POINTS, getRank } = require('../../lib/mandalaData');
@@ -10,7 +11,7 @@ module.exports = async function handler(req, res) {
     if (user.role !== 'admin') return res.status(403).json({ error: '管理者権限が必要です' });
 
     const num = parseInt(req.query.num);
-    if (!num || num < 1 || num > 30) return res.status(400).json({ error: '不正なチーム番号' });
+    if (!num || num < 1 || num > event.teamCount) return res.status(400).json({ error: '不正なチーム番号' });
 
     const { subs, benefits } = await getTeamDetail(num);
     const subMap = {};

@@ -4,13 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="color-scheme" content="light">
-<title>GTS2026 Singapore</title>
+<title>GTS2026 — ログイン</title>
+<script src="/event.config.js"></script>
+<script src="/event-branding.js" defer></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root, html, body { color-scheme: light only; }
 body {
   min-height: 100vh;
-  background: linear-gradient(160deg, #c4131f 0%, #8c0a14 50%, #1a0a2e 100%);
+  background: linear-gradient(160deg, var(--red, #c4131f) 0%, var(--dark, #8c0a14) 50%, #1a0a2e 100%);
   font-family: 'Noto Sans JP','Hiragino Sans',sans-serif;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -34,7 +36,7 @@ body {
 /* チーム選択ボタン */
 .team-select-btn {
   width: 100%; padding: 18px;
-  background: linear-gradient(135deg, #c4131f, #8c0a14);
+  background: linear-gradient(135deg, var(--red, #c4131f), var(--dark, #8c0a14));
   color: white; border: none; border-radius: 14px;
   font-size: 18px; font-weight: 900; cursor: pointer;
   letter-spacing: 2px;
@@ -65,7 +67,7 @@ body {
   transition: border-color .2s;
 }
 .field input::placeholder { color: #bbb !important; -webkit-text-fill-color: #bbb !important; }
-.field input:focus { border-color: #c4131f; }
+.field input:focus { border-color: var(--red, #c4131f); }
 .admin-btn {
   width: 100%; padding: 12px; border: 1.5px solid #ddd;
   border-radius: 10px; background: #f8f8f8; color: #666;
@@ -75,7 +77,7 @@ body {
 .admin-btn:hover { background: #f0f0f0; }
 .error {
   background: #fff0f0; border: 1px solid #ffaaaa;
-  border-radius: 8px; padding: 10px; color: #c4131f;
+  border-radius: 8px; padding: 10px; color: var(--red, #c4131f);
   font-size: 13px; margin-top: 10px; display: none; text-align: center;
 }
 
@@ -91,6 +93,7 @@ body {
 .modal {
   background: #fff; border-radius: 24px 24px 0 0;
   width: 100%; max-width: 480px;
+  max-height: 85vh; overflow-y: auto; overscroll-behavior: contain;
   padding: 0 0 32px;
   animation: slideUp .25s cubic-bezier(.22,1,.36,1);
 }
@@ -110,11 +113,11 @@ body {
   aspect-ratio: 1/1;
   background: #fff5f5; border: 2px solid #ffd0d0;
   border-radius: 14px; cursor: pointer;
-  font-size: 17px; font-weight: 900; color: #c4131f;
+  font-size: 17px; font-weight: 900; color: var(--red, #c4131f);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 1px; transition: all .12s;
 }
-.modal-team-btn:active { background: #c4131f; color: #fff; border-color: #c4131f; transform: scale(.93); }
+.modal-team-btn:active { background: var(--red, #c4131f); color: #fff; border-color: var(--red, #c4131f); transform: scale(.93); }
 .modal-team-btn .t-lbl { font-size: 8px; font-weight: 500; color: #e88; letter-spacing: 1px; }
 .modal-team-btn:active .t-lbl { color: rgba(255,255,255,.7); }
 
@@ -137,9 +140,10 @@ body {
 <body>
 
 <div class="header">
-  <div class="emoji">🦁</div>
-  <h1>GTS2026</h1>
-  <p>Singapore — マンダラチャートシステム</p>
+  <div class="emoji" data-event="emblem">🦁</div>
+  <h1 data-event="eventName">GTS2026</h1>
+  <p data-event="description">マンダラチャートシステム</p>
+  <p data-event="organizationName"></p>
 </div>
 
 <div class="card">
@@ -192,10 +196,10 @@ if (tok) {
   window.location.href = sessionStorage.getItem('gts_role') === 'admin' ? '/admin.html' : '/team.html';
 }
 
-// モーダルにチームボタン生成（1〜22）
+// 設定されたチーム数のボタンを生成
 let selectedTeam = null;
 const modalGrid = document.getElementById('modalGrid');
-for (let i = 1; i <= 22; i++) {
+for (let i = 1; i <= window.EVENT_CONFIG.teamCount; i++) {
   const btn = document.createElement('button');
   btn.className = 'modal-team-btn';
   btn.innerHTML = `${i}<span class="t-lbl">TEAM</span>`;
@@ -243,7 +247,7 @@ async function loginTeam() {
     const res  = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login_id: `GTS2026_${num}`, password })
+      body: JSON.stringify({ login_id: window.EVENT_CONFIG.loginPrefix + num, password })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);

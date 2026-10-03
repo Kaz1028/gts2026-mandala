@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GTS2026 — 管理者ダッシュボード</title>
+<script src="/event.config.js"></script>
+<script src="/event-branding.js" defer></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root, html, body { color-scheme: light only; }
@@ -144,8 +146,8 @@ body { background:var(--bg); font-family:'Noto Sans JP','Hiragino Sans',sans-ser
 
 <div class="header">
   <div>
-    <h1>🦁 GTS2026 — 管理者ダッシュボード</h1>
-    <div class="header-sub">Singapore — チーム進捗・ミッション管理</div>
+    <h1><span data-event="emblem">🦁</span> <span data-event="eventName">GTS2026</span> — 管理者ダッシュボード</h1>
+    <div class="header-sub"><span data-event="organizationName"></span> — チーム進捗・ミッション管理</div>
   </div>
   <div class="header-right">
     <button class="refresh-btn" onclick="loadAll()">🔄 更新</button>
