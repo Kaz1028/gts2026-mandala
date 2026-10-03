@@ -1,0 +1,20 @@
+node_modules/
+db/*.db
+db/*.db-shm
+db/*.db-wal
+uploads/
+.env
+.env.local
+.vercel/
+.claude/
+
+.vercel
+.env*
+!.env.example
+
+# Local participant responses and reports (never publish)
+/レポート/
+
+# Private operations and clean publication workspace
+/.private/
+/.release/

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTS2026 — 管理者ダッシュボード</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root, html, body { color-scheme: light only; }
+:root { --red:#c4131f; --dark:#8c0a14; --gold:#f4c430; --bg:#f4f6f9; }
+body { background:var(--bg); font-family:'Noto Sans JP','Hiragino Sans',sans-serif; color:#333; }
+
+/* ヘッダー */
+.header {
+  background:linear-gradient(135deg,var(--red),var(--dark));
+  color:#fff; padding:14px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+.header h1 { font-size:18px; font-weight:900; }
+.header-sub { font-size:12px; opacity:.7; margin-top:2px; }
+.header-right { display:flex; gap:10px; align-items:center; }
+.refresh-btn, .logout-btn {
+  padding:8px 14px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:700;
+}
+.refresh-btn { background:rgba(255,255,255,.2); color:#fff; }
+.logout-btn  { background:#fff; color:var(--red); }
+
+/* サマリー */
+.summary {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+  padding:16px 20px; max-width:1200px; margin:0 auto;
+}
+.summary-card {
+  background:#fff; border-radius:14px; padding:16px 18px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+.summary-card .num { font-size:28px; font-weight:900; color:var(--red); }
+.summary-card .lbl { font-size:12px; color:#888; margin-top:2px; }
+
+/* チームグリッド */
+.main { padding:0 20px 24px; max-width:1200px; margin:0 auto; }
+.section-title { font-size:15px; font-weight:700; color:#555; margin-bottom:10px; }
+.teams-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px;
+}
+.team-card {
+  background:#fff; border-radius:14px; padding:14px 16px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07); cursor:pointer;
+  border:2px solid transparent; transition:border-color .2s, transform .15s;
+}
+.team-card:hover { border-color:var(--red); transform:translateY(-2px); }
+.team-card.selected { border-color:var(--red); background:#fff9f9; }
+.tc-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.tc-num { font-size:13px; font-weight:900; color:var(--red); }
+.tc-rank { font-size:11px; background:#fff0e8; color:#835; padding:2px 7px; border-radius:8px; }
+.tc-pts { font-size:20px; font-weight:900; color:#333; margin:4px 0 2px; }
+.tc-done { font-size:12px; color:#888; }
+.tc-bar-bg { height:5px; background:#f0f0f0; border-radius:3px; margin-top:8px; }
+.tc-bar-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--red)); border-radius:3px; }
+.tc-benefit { margin-top:6px; font-size:11px; color:#2a7; }
+
+/* 詳細パネル */
+.detail-panel {
+  display:none; background:#fff; border-radius:16px;
+  margin:12px 0; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,.1);
+}
+.detail-panel.open { display:block; }
+.dp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.dp-title { font-size:17px; font-weight:900; }
+.dp-close { background:#f0f0f0; border:none; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px; }
+.dp-stats { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+.dp-stat { background:#f8f9ff; border-radius:10px; padding:10px 14px; }
+.dp-stat .n { font-size:20px; font-weight:900; color:var(--red); }
+.dp-stat .l { font-size:11px; color:#888; }
+
+/* テーマ別ミッション */
+.themes-wrap { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+.theme-block { border:1.5px solid #eee; border-radius:12px; overflow:hidden; }
+.theme-block-header {
+  background:linear-gradient(135deg,#fff5f5,#ffe8e8);
+  padding:10px 14px; display:flex; align-items:center; justify-content:space-between;
+}
+.thb-name { font-weight:700; font-size:14px; }
+.thb-count { font-size:12px; color:#888; }
+.mission-row {
+  padding:9px 14px; border-bottom:1px solid #f5f5f5;
+  display:flex; align-items:flex-start; gap:10px;
+}
+.mission-row:last-child { border-bottom:none; }
+.mr-icon { font-size:16px; min-width:20px; }
+.mr-body { flex:1; }
+.mr-text { font-size:13px; color:#333; line-height:1.4; }
+.mr-meta { display:flex; gap:8px; margin-top:4px; flex-wrap:wrap; }
+.mr-pts { font-size:11px; color:var(--red); font-weight:700; }
+.mr-type { font-size:10px; background:#f0f0f0; color:#666; padding:1px 6px; border-radius:6px; }
+.mr-submitted { margin-top:6px; }
+.mr-submitted-text { font-size:12px; color:#444; background:#f8f8ff; padding:6px 8px; border-radius:7px; line-height:1.5; }
+.mr-photo { max-width:160px; max-height:120px; border-radius:8px; margin-top:4px; cursor:pointer; object-fit:cover; }
+
+/* 特典 */
+.benefits-section { margin-top:16px; }
+.benefits-title { font-size:14px; font-weight:700; color:#555; margin-bottom:8px; }
+.benefit-item {
+  display:flex; align-items:center; justify-content:space-between;
+  background:#fffff0; border:1px solid #ffe; padding:8px 12px; border-radius:8px; margin-bottom:6px;
+}
+.benefit-text { flex:1; font-size:13px; }
+.benefit-del { background:#ffeeee; border:none; color:var(--red); border-radius:6px; padding:4px 10px; cursor:pointer; font-size:12px; }
+.add-benefit-form { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.add-benefit-form input {
+  flex:1; padding:9px 12px; border:1.5px solid #ddd; border-radius:8px; font-size:13px; min-width:140px; outline:none;
+}
+.add-benefit-form input:focus { border-color:var(--red); }
+.add-benefit-btn {
+  padding:9px 16px; background:linear-gradient(135deg,var(--red),var(--dark));
+  color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:700;
+  white-space:nowrap;
+}
+
+/* 写真拡大 */
+.photo-modal {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.85);
+  z-index:500; align-items:center; justify-content:center;
+}
+.photo-modal.open { display:flex; }
+.photo-modal img { max-width:90vw; max-height:90vh; border-radius:12px; object-fit:contain; }
+.photo-modal-close {
+  position:absolute; top:20px; right:24px; background:rgba(255,255,255,.2);
+  border:none; color:#fff; font-size:24px; border-radius:50%; width:40px; height:40px; cursor:pointer;
+}
+
+/* ローディング */
+.loading { text-align:center; padding:60px; color:#aaa; font-size:14px; }
+@media(max-width:600px) {
+  .summary { grid-template-columns:repeat(2,1fr); }
+  .teams-grid { grid-template-columns:repeat(2,1fr); }
+}
+.noto-emoji { height: 1em; width: 1em; vertical-align: -0.125em; margin: 0 .03em; display: inline-block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🦁 GTS2026 — 管理者ダッシュボード</h1>
+    <div class="header-sub">Singapore — チーム進捗・ミッション管理</div>
+  </div>
+  <div class="header-right">
+    <button class="refresh-btn" onclick="loadAll()">🔄 更新</button>
+    <button class="logout-btn" onclick="logout()">ログアウト</button>
+  </div>
+</div>
+
+<!-- サマリー -->
+<div class="summary">
+  <div class="summary-card"><div class="num" id="sTotal">—</div><div class="lbl">参加チーム数</div></div>
+  <div class="summary-card"><div class="num" id="sDone">—</div><div class="lbl">総完了ミッション数</div></div>
+  <div class="summary-card"><div class="num" id="sTop">—</div><div class="lbl">最高スコア (pt)</div></div>
+  <div class="summary-card"><div class="num" id="sAvg">—</div><div class="lbl">平均スコア (pt)</div></div>
+</div>
+
+<div class="main">
+  <div class="section-title">チーム一覧（クリックで詳細表示）</div>
+  <div id="teamsGrid" class="teams-grid"><div class="loading">読み込み中...</div></div>
+  <div id="detailPanel" class="detail-panel"></div>
+</div>
+
+<!-- 写真拡大モーダル -->
+<div class="photo-modal" id="photoModal" onclick="closePhoto()">
+  <button class="photo-modal-close" onclick="closePhoto()">✕</button>
+  <img id="photoModalImg" src="" alt="">
+</div>
+
+<script>
+const TOKEN = sessionStorage.getItem('gts_token');
+const ROLE  = sessionStorage.getItem('gts_role');
+if (!TOKEN || ROLE !== 'admin') { window.location.href = '/'; }
+
+let teamsCache = [];
+let selectedTeam = null;
+let autoRefreshTimer = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+  });
+  if (res.status === 401 || res.status === 403) { sessionStorage.clear(); window.location.href = '/'; return; }
+  return res.json();
+}
+
+async function loadAll() {
+  const teams = await api('/api/admin/teams');
+  if (!teams) return;
+  teamsCache = teams;
+
+  // サマリー
+  const totalDone = teams.reduce((s, t) => s + t.doneCount, 0);
+  const topScore  = Math.max(...teams.map(t => t.totalEarned));
+  const avgScore  = Math.round(teams.reduce((s, t) => s + t.totalEarned, 0) / teams.length);
+  document.getElementById('sTotal').textContent = teams.length;
+  document.getElementById('sDone').textContent  = totalDone;
+  document.getElementById('sTop').textContent   = topScore;
+  document.getElementById('sAvg').textContent   = avgScore;
+
+  // チームカード
+  const grid = document.getElementById('teamsGrid');
+  grid.innerHTML = '';
+  teams.forEach(t => {
+    const card = document.createElement('div');
+    card.className = `team-card${selectedTeam === t.team_number ? ' selected' : ''}`;
+    card.id = `tc_${t.team_number}`;
+    const pct = Math.min(100, Math.round((t.totalEarned / t.totalPoints) * 100));
+    card.innerHTML = `
+      <div class="tc-top">
+        <span class="tc-num">TEAM ${t.team_number}</span>
+        <span class="tc-rank">${t.rank}</span>
+      </div>
+      <div class="tc-pts">${t.totalEarned} pt</div>
+      <div class="tc-done">${t.doneCount} / ${t.totalMissions} ミッション完了</div>
+      <div class="tc-bar-bg"><div class="tc-bar-fill" style="width:${pct}%"></div></div>
+      ${t.benefitCount > 0 ? `<div class="tc-benefit">🎁 特典 ${t.benefitCount}件</div>` : ''}
+    `;
+    card.onclick = () => loadDetail(t.team_number);
+    grid.appendChild(card);
+  });
+
+  // 詳細パネルを再描画（選択中の場合。自動更新なのでスクロールはしない）
+  if (selectedTeam) loadDetail(selectedTeam, { scroll: false });
+}
+
+async function loadDetail(teamNum, { scroll = true } = {}) {
+  selectedTeam = teamNum;
+  document.querySelectorAll('.team-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById(`tc_${teamNum}`);
+  if (card) { card.classList.add('selected'); if (scroll) card.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+
+  const panel = document.getElementById('detailPanel');
+  panel.innerHTML = '<div class="loading">詳細を読み込み中...</div>';
+  panel.classList.add('open');
+
+  const data = await api(`/api/admin/team/${teamNum}`);
+  if (!data) return;
+
+  const totalEarned = data.stats.totalEarned;
+  const benefits = data.benefits || [];
+
+  let themesHTML = '';
+  data.themes.forEach(theme => {
+    const done  = theme.missions.filter(m => m.status === 'done').length;
+    const total = theme.missions.length;
+    let missionsHTML = '';
+    theme.missions.forEach(m => {
+      const icon = m.status === 'done' ? '✅' : '⬜';
+      const typeLabel = m.type === 'text' ? '記述' : m.type === 'photo' ? '写真' : 'チェック';
+      let submittedHTML = '';
+      if (m.status === 'done') {
+        if (m.text_content) {
+          submittedHTML = `<div class="mr-submitted"><div class="mr-submitted-text">📝 ${escHtml(m.text_content)}</div></div>`;
+        }
+        if (m.photo_url) {
+          submittedHTML += `<div class="mr-submitted"><img src="${m.photo_url}" class="mr-photo" onclick="openPhoto('${m.photo_url}')" alt="提出写真"></div>`;
+        }
+      }
+      missionsHTML += `
+        <div class="mission-row">
+          <div class="mr-icon">${icon}</div>
+          <div class="mr-body">
+            <div class="mr-text">${escHtml(m.text)}</div>
+            <div class="mr-meta">
+              <span class="mr-pts">+${m.points}pt</span>
+              <span class="mr-type">${typeLabel}</span>
+              ${m.status === 'done' && m.submitted_at ? `<span style="font-size:10px;color:#aaa">${formatDate(m.submitted_at)}</span>` : ''}
+            </div>
+            ${submittedHTML}
+          </div>
+        </div>`;
+    });
+    themesHTML += `
+      <div class="theme-block">
+        <div class="theme-block-header">
+          <span class="thb-name">${theme.emblem} ${theme.name.replace('\n',' ')}</span>
+          <span class="thb-count">${done}/${total} 完了</span>
+        </div>
+        ${missionsHTML}
+      </div>`;
+  });
+
+  let benefitsHTML = benefits.map(b => `
+    <div class="benefit-item">
+      <div class="benefit-text">🎁 <strong>${escHtml(b.title)}</strong>${b.description ? ' — ' + escHtml(b.description) : ''}</div>
+      <button class="benefit-del" onclick="deleteBenefit(${b.id}, ${teamNum})">削除</button>
+    </div>`).join('') || '<div style="font-size:13px;color:#aaa;margin-bottom:8px">特典なし</div>';
+
+  panel.innerHTML = `
+    <div class="dp-header">
+      <div class="dp-title">TEAM ${teamNum} — ${data.rank}</div>
+      <button class="dp-close" onclick="closeDetail()">✕ 閉じる</button>
+    </div>
+    <div class="dp-stats">
+      <div class="dp-stat"><div class="n">${totalEarned}</div><div class="l">獲得ポイント</div></div>
+      <div class="dp-stat"><div class="n">${data.stats.doneCount}</div><div class="l">完了ミッション</div></div>
+      <div class="dp-stat"><div class="n">${data.stats.rankPct}%</div><div class="l">進捗率</div></div>
+    </div>
+    <div class="themes-wrap">${themesHTML}</div>
+    <div class="benefits-section">
+      <div class="benefits-title">🎁 特典管理</div>
+      <div id="benefitList_${teamNum}">${benefitsHTML}</div>
+      <div class="add-benefit-form">
+        <input type="text" id="bTitle_${teamNum}" placeholder="特典名（例：ボーナスポイント）">
+        <input type="text" id="bDesc_${teamNum}" placeholder="説明（任意）">
+        <button class="add-benefit-btn" onclick="addBenefit(${teamNum})">＋ 付与</button>
+      </div>
+    </div>
+  `;
+}
+
+function closeDetail() {
+  selectedTeam = null;
+  document.getElementById('detailPanel').classList.remove('open');
+  document.querySelectorAll('.team-card').forEach(c => c.classList.remove('selected'));
+}
+
+async function addBenefit(teamNum) {
+  const title = document.getElementById(`bTitle_${teamNum}`)?.value?.trim();
+  const desc  = document.getElementById(`bDesc_${teamNum}`)?.value?.trim();
+  if (!title) return alert('特典名を入力してください');
+  const data = await api('/api/admin/benefit', {
+    method: 'POST',
+    body: JSON.stringify({ team_number: teamNum, title, description: desc })
+  });
+  if (data?.success) { document.getElementById(`bTitle_${teamNum}`).value = ''; await loadDetail(teamNum); }
+}
+
+async function deleteBenefit(id, teamNum) {
+  if (!confirm('この特典を削除しますか？')) return;
+  await api(`/api/admin/benefit/${id}`, { method: 'DELETE' });
+  await loadDetail(teamNum);
+}
+
+function openPhoto(src) {
+  document.getElementById('photoModalImg').src = src;
+  document.getElementById('photoModal').classList.add('open');
+}
+function closePhoto() { document.getElementById('photoModal').classList.remove('open'); }
+
+function formatDate(dt) {
+  if (!dt) return '';
+  return new Date(dt).toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function logout() { sessionStorage.clear(); window.location.href = '/'; }
+
+// 初回ロード＋10秒ポーリング
+loadAll();
+autoRefreshTimer = setInterval(loadAll, 10000);
+</script>
+<script src="/noto-emoji.js" defer></script>
+</body>
+</html>

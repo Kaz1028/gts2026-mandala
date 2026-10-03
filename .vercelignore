@@ -1,0 +1,16 @@
+server.js
+db/
+/mandalaData.js
+pachinko_garo.html
+railway.json
+Procfile
+DEPLOY.md
+public/
+
+.private/
+.release/
+レポート/
+uploads/
+.env*
+tests/
+.git/

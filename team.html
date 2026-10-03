@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GTS2026 — マンダラチャート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&family=RocknRoll+One&family=Mochiy+Pop+One&family=DotGothic16&family=Dela+Gothic+One&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root, html, body { color-scheme: light only; }
+:root {
+  --red: #c4131f; --dark-red: #8c0a14; --gold: #f4c430; --gold2: #ffd86b;
+  --bg: #b01020; --white: #fff;
+}
+body {
+  background: linear-gradient(160deg, var(--red) 0%, var(--dark-red) 100%);
+  min-height: 100vh; font-family: 'Noto Sans JP','Hiragino Sans',sans-serif;
+  color: var(--white); overscroll-behavior: none;
+}
+
+/* ヘッダー */
+.header {
+  background: rgba(0,0,0,.25); padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px);
+}
+.header-left { display:flex; align-items:center; gap:8px; }
+.team-badge {
+  background: var(--gold); color: #333; font-weight:900;
+  font-size:12px; padding:4px 10px; border-radius:20px; letter-spacing:1px;
+}
+.header-title { font-size:15px; font-weight:700; }
+.header-right { display:flex; align-items:center; gap:10px; }
+.score-box { text-align:right; }
+.score-pts { font-size:20px; font-weight:900; color:var(--gold); line-height:1; }
+.score-rank { font-size:10px; opacity:.8; }
+.logout-btn {
+  background:rgba(255,255,255,.15); border:none; color:white;
+  padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px;
+}
+
+/* ランクバー */
+.rank-bar-wrap { padding: 6px 16px 8px; background: rgba(0,0,0,.15); }
+.rank-bar-labels { display:flex; justify-content:space-between; font-size:10px; opacity:.7; margin-bottom:3px; }
+.rank-bar-bg { height:6px; background:rgba(255,255,255,.2); border-radius:4px; overflow:hidden; }
+.rank-bar-fill { height:100%; background:linear-gradient(90deg,var(--gold2),var(--gold)); border-radius:4px; transition:width .6s ease; }
+
+/* マンダラグリッド */
+.mandala-wrap { padding: 14px 12px; max-width: 480px; margin: 0 auto; }
+.mandala-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.cell {
+  aspect-ratio: 1/1;
+  border-radius: 14px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .15s, box-shadow .15s;
+  border: 2px solid rgba(220,30,45,.6);
+  background: linear-gradient(160deg,#fff 0%,#ffeae6 100%);
+  color: #333; padding: 6px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.25);
+}
+.cell:active { transform: scale(.95); }
+.cell.center {
+  background: radial-gradient(circle at 50% 28%, #ffeaa8, #f4c430 56%, #d89a10);
+  border-color: rgba(255,255,255,.5);
+  color: #5a3200;
+  box-shadow: 0 6px 18px rgba(150,90,0,.45);
+  cursor: default;
+}
+.cell-emblem { font-size: 22px; line-height:1; }
+.cell-name { font-size: 11px; font-weight:700; text-align:center; line-height:1.3; margin-top:4px; white-space:pre-line; }
+.cell-progress { font-size:10px; opacity:.6; margin-top:3px; }
+.cell-done-badge {
+  position:absolute; top:5px; right:5px;
+  background:var(--gold); color:#333;
+  font-size:10px; font-weight:900;
+  border-radius:10px; padding:1px 5px;
+}
+
+/* テーマシート（ボトムシート） */
+.sheet-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.55);
+  z-index:200; align-items:flex-end;
+}
+.sheet-overlay.open { display:flex; animation: fadeIn .2s; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.sheet {
+  background:#fff; border-radius:22px 22px 0 0;
+  width:100%; max-height:82vh; display:flex; flex-direction:column;
+  animation: slideUp .25s cubic-bezier(.22,1,.36,1);
+}
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+.sheet-handle { width:40px; height:4px; background:#ddd; border-radius:2px; margin:10px auto 0; }
+.sheet-header {
+  padding:14px 20px 10px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid #f0f0f0;
+}
+.sheet-title { font-size:17px; font-weight:900; color:#333; }
+.sheet-pts { font-size:13px; color:#888; }
+.sheet-close {
+  width:30px; height:30px; border-radius:50%; background:#f0f0f0;
+  border:none; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center;
+}
+.mission-list { overflow-y:auto; padding:10px 0 24px; flex:1; }
+
+/* ミッションカード */
+.mission-card {
+  margin: 6px 16px; border-radius:14px;
+  border:1.5px solid #f0e0e0; overflow:hidden;
+}
+.mission-card.done { border-color:#d4edda; background:#f6fff8; }
+.mission-top {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:14px 14px 10px;
+}
+.mission-check {
+  width:28px; height:28px; min-width:28px; border-radius:50%;
+  border:2.5px solid #e3b7b0; background:#fff; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s; font-size:14px; margin-top:1px;
+}
+.mission-card.done .mission-check {
+  background:linear-gradient(135deg,#f4c430,#d89a10);
+  border-color:#d89a10; color:#fff;
+}
+.mission-info { flex:1; }
+.mission-text { font-size:14px; color:#333; line-height:1.5; }
+.mission-meta { display:flex; gap:8px; align-items:center; margin-top:6px; }
+.mission-pts { font-size:12px; color:#c4131f; font-weight:700; }
+.mission-stars { font-size:11px; color:#f4c430; }
+.mission-type-badge {
+  font-size:10px; font-weight:700; padding:2px 7px; border-radius:8px;
+  background:#f0f0f0; color:#666;
+}
+.mission-type-badge.text { background:#e8f0ff; color:#336; }
+.mission-type-badge.photo { background:#fff0e8; color:#835; }
+
+/* テキスト入力エリア */
+.mission-input-area { padding:0 14px 14px; }
+textarea.mission-textarea {
+  width:100%; min-height:80px; border:1.5px solid #ddd; border-radius:10px;
+  padding:10px 12px; font-size:14px; font-family:inherit; resize:vertical;
+  outline:none; transition:border-color .2s;
+}
+textarea.mission-textarea:focus { border-color:#c4131f; }
+.text-btn-row { display:flex; gap:8px; margin-top:8px; }
+.submit-btn {
+  flex:1; padding:11px; border:none; border-radius:10px;
+  background:linear-gradient(135deg,#c4131f,#8c0a14); color:#fff;
+  font-size:14px; font-weight:700; cursor:pointer;
+}
+.submit-btn:disabled { opacity:.5; cursor:default; }
+.clear-btn {
+  padding:11px 16px; border:1.5px solid #ddd; border-radius:10px;
+  background:#fff; color:#888; font-size:13px; font-weight:700; cursor:pointer;
+  white-space:nowrap;
+}
+.clear-btn:active { background:#f5f5f5; }
+
+/* 写真アップロード */
+.photo-area { padding:0 14px 14px; }
+.photo-preview { width:100%; max-height:200px; object-fit:cover; border-radius:10px; margin-bottom:8px; display:none; }
+.photo-preview.show { display:block; }
+.upload-btn-wrap { display:flex; gap:8px; }
+.photo-select-btn, .photo-submit-btn {
+  flex:1; padding:11px; border-radius:10px; border:none; cursor:pointer;
+  font-size:14px; font-weight:700;
+}
+.photo-select-btn { background:#f0f0f0; color:#333; }
+.photo-submit-btn { background:linear-gradient(135deg,#c4131f,#8c0a14); color:#fff; }
+.photo-submit-btn:disabled { opacity:.5; cursor:default; }
+
+/* テキスト送信済み表示 */
+.submitted-text {
+  background:#f8f9ff; border-radius:10px; padding:10px 12px;
+  font-size:13px; color:#555; line-height:1.6; margin:0 14px 14px;
+  border:1px solid #e0e8ff;
+}
+.edit-link { font-size:12px; color:#c4131f; cursor:pointer; margin-left:8px; }
+
+/* ===== スロット777演出 ===== */
+#slotOverlay {
+  display: none; position: fixed; inset: 0; z-index: 350;
+  background: radial-gradient(ellipse at center, #001a1a 0%, #000 70%);
+  align-items: center; justify-content: center; flex-direction: column;
+}
+#slotOverlay.show { display: flex; }
+.sl-reel-wrap {
+  display: flex; gap: 8px; align-items: center; justify-content: center;
+}
+.sl-col {
+  width: min(26vw, 120px); height: min(35vw, 160px);
+  border: 2px solid rgba(0,229,255,.4); border-radius: 8px;
+  background: rgba(0,10,20,.85); overflow: hidden; position: relative;
+  box-shadow: 0 0 15px rgba(0,200,255,.3), inset 0 0 20px rgba(0,0,0,.8);
+}
+.sl-strip {
+  position: absolute; top: 0; left: 0; width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+}
+.sl-num {
+  width: 100%; height: min(12vw, 54px);
+  display: flex; align-items: center; justify-content: center;
+  font-size: min(9vw, 42px); font-weight: 900; color: #00e5ff;
+  text-shadow: 0 0 8px #00e5ff, 0 0 16px #0099cc;
+  border-bottom: 1px solid rgba(0,229,255,.15);
+}
+.sl-num.sv { color: #ffd700; text-shadow: 0 0 10px #ffd700, 0 0 22px #ff8800, 0 0 38px #ff4400; }
+.sl-line {
+  position: absolute; top: 50%; left: 0; width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,.8), transparent);
+  transform: translateY(-50%); pointer-events: none;
+}
+#slotTitle {
+  color: #ffd700; font-size: min(5vw, 22px); font-weight: 900;
+  letter-spacing: 4px; margin-top: 18px;
+  text-shadow: 0 0 10px #ffd700, 0 0 20px #ff8800;
+  opacity: 0; transition: opacity .5s;
+}
+
+/* ===== ねこ演出 ===== */
+#catOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); z-index: 400;
+  align-items: center; justify-content: center;
+}
+#catOverlay.show { display: flex; }
+#catAuraEl {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: min(80vw, 380px); height: min(80vw, 380px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(180,235,255,.3) 0%, rgba(0,200,255,.12) 45%, transparent 72%);
+  box-shadow: 0 0 50px rgba(0,229,255,.5), 0 0 100px rgba(0,160,255,.25);
+  z-index: 401; opacity: 0; pointer-events: none; transition: opacity .8s;
+}
+#catAuraEl.visible { opacity: 1; }
+#catImgEl {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%) scale(0.2);
+  z-index: 402; opacity: 0;
+  width: min(72vw, 340px); height: min(72vw, 340px);
+  object-fit: contain; pointer-events: none;
+  filter: drop-shadow(0 0 18px rgba(0,229,255,.85)) drop-shadow(0 0 38px rgba(0,180,255,.5));
+}
+#catImgEl.animating {
+  animation: catFloat 2.4s ease-in-out infinite, catGlow 1.8s ease-in-out infinite;
+}
+@keyframes catFloat {
+  0%,100% { transform: translate(-50%,-50%) scale(1) rotate(-2deg); }
+  25%     { transform: translate(-50%,calc(-50% - 12px)) scale(1.02) rotate(0deg); }
+  50%     { transform: translate(-50%,calc(-50% - 22px)) scale(1.04) rotate(2deg); }
+  75%     { transform: translate(-50%,calc(-50% - 10px)) scale(1.02) rotate(0deg); }
+}
+@keyframes catGlow {
+  0%,100% { filter: drop-shadow(0 0 14px rgba(0,229,255,.7)) drop-shadow(0 0 30px rgba(100,200,255,.4)); }
+  50%     { filter: drop-shadow(0 0 32px rgba(0,229,255,1.0)) drop-shadow(0 0 65px rgba(100,210,255,.7)) drop-shadow(0 0 90px rgba(255,200,100,.25)); }
+}
+#catTapHint {
+  position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,.7); font-size: 13px; z-index: 403;
+  animation: blink 1.5s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+/* ===== エフェクト オーバーレイ ===== */
+#effectCanvas {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  pointer-events: none; z-index: 300;
+}
+#flashEl {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: white; opacity: 0; pointer-events: none; z-index: 301;
+  transition: opacity 0.08s;
+}
+#borderGlowEl {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  pointer-events: none; z-index: 299;
+  box-shadow: inset 0 0 0 transparent;
+  transition: box-shadow 0.3s;
+}
+#borderGlowEl.cyan  { box-shadow: inset 0 0 60px rgba(0,229,255,.6), inset 0 0 120px rgba(0,150,255,.3); }
+#borderGlowEl.gold  { box-shadow: inset 0 0 60px rgba(255,200,0,.7), inset 0 0 120px rgba(255,100,0,.4); }
+
+/* トースト */
+.toast {
+  position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+  background:rgba(30,30,30,.9); color:#fff; padding:12px 24px;
+  border-radius:30px; font-size:14px; z-index:999;
+  animation: toastIn .3s ease; pointer-events:none;
+}
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+.noto-emoji { height: 1em; width: 1em; vertical-align: -0.125em; margin: 0 .03em; display: inline-block; }
+.cell-emblem .noto-emoji { height: 1em; width: 1em; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="team-badge" id="teamBadge">TEAM —</span>
+    <span class="header-title">🦁 GTS2026</span>
+  </div>
+  <div class="header-right">
+    <div class="score-box">
+      <div class="score-pts" id="scorePts">0 pt</div>
+      <div class="score-rank" id="scoreRank">ルーキー</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">ログアウト</button>
+  </div>
+</div>
+
+<div class="rank-bar-wrap">
+  <div class="rank-bar-labels">
+    <span>進捗</span><span id="progressLabel">0 / 0 ミッション</span>
+  </div>
+  <div class="rank-bar-bg"><div class="rank-bar-fill" id="rankBar" style="width:0%"></div></div>
+</div>
+
+<div class="mandala-wrap">
+  <div class="mandala-grid" id="mandalaGrid"></div>
+</div>
+
+<!-- エフェクト要素 -->
+<canvas id="effectCanvas"></canvas>
+<div id="flashEl"></div>
+<div id="borderGlowEl"></div>
+<!-- スロット777演出 -->
+<div id="slotOverlay">
+  <div class="sl-reel-wrap">
+    <div class="sl-col" id="sc1"><div class="sl-strip" id="ss1"></div><div class="sl-line"></div></div>
+    <div class="sl-col" id="sc2"><div class="sl-strip" id="ss2"></div><div class="sl-line"></div></div>
+    <div class="sl-col" id="sc3"><div class="sl-strip" id="ss3"></div><div class="sl-line"></div></div>
+  </div>
+  <div id="slotTitle">🎰 ミッションコンプリート！</div>
+</div>
+<!-- ねこ演出 -->
+<div id="catOverlay" onclick="hideCat()"></div>
+<div id="catAuraEl"></div>
+<img id="catImgEl" src="/emoji/1f981.svg" alt="🦁">
+<div id="catTapHint">タップで閉じる</div>
+
+<!-- テーマシート -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet(event)">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div>
+        <div class="sheet-title" id="sheetTitle"></div>
+        <div class="sheet-pts" id="sheetPts"></div>
+      </div>
+      <button class="sheet-close" onclick="closeSheet()">✕</button>
+    </div>
+    <div class="mission-list" id="missionList"></div>
+  </div>
+</div>
+
+<script>
+const TOKEN = sessionStorage.getItem('gts_token');
+if (!TOKEN) { window.location.href = '/'; }
+
+let mandalaData = null;
+let currentTheme = null;
+let pendingPhotoFile = null;
+let pendingPhotoMissionId = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+  });
+  if (res.status === 401) { sessionStorage.clear(); window.location.href = '/'; return; }
+  return res.json();
+}
+
+async function loadMandala() {
+  const data = await api('/api/team/mandala');
+  mandalaData = data;
+  renderHeader(data);
+  renderGrid(data);
+}
+
+function renderHeader(data) {
+  document.getElementById('teamBadge').textContent = `TEAM ${data.team_number}`;
+  document.getElementById('scorePts').textContent = `${data.stats.totalEarned} pt`;
+  document.getElementById('scoreRank').textContent = data.rank;
+  document.getElementById('progressLabel').textContent = `${data.stats.doneCount} / ${data.stats.totalMissions} ミッション`;
+  document.getElementById('rankBar').style.width = `${data.stats.rankPct}%`;
+}
+
+function renderGrid(data) {
+  const grid = document.getElementById('mandalaGrid');
+  // 3x3配置: [0,1,2, 3,center,4, 5,6,7]
+  const order = [0, 1, 2, 3, 'center', 4, 5, 6, 7];
+  grid.innerHTML = '';
+  order.forEach(idx => {
+    const div = document.createElement('div');
+    div.className = 'cell';
+    if (idx === 'center') {
+      div.classList.add('center');
+      div.innerHTML = `<div class="cell-emblem">🦁</div><div class="cell-name">${data.center.name}</div>`;
+    } else {
+      const theme = data.themes[idx];
+      const done  = theme.missions.filter(m => m.status === 'done').length;
+      const total = theme.missions.length;
+      div.innerHTML = `
+        <div class="cell-emblem">${theme.emblem}</div>
+        <div class="cell-name">${theme.name}</div>
+        <div class="cell-progress">${done}/${total}</div>
+        ${done > 0 ? `<div class="cell-done-badge">${done}</div>` : ''}
+      `;
+      if (done === total) div.style.background = 'linear-gradient(160deg,#fffbe6,#ffeaa8)';
+      div.onclick = () => openSheet(theme);
+    }
+    grid.appendChild(div);
+  });
+}
+
+function openSheet(theme) {
+  currentTheme = theme;
+  document.getElementById('sheetTitle').textContent = `${theme.emblem} ${theme.name.replace('\n', ' ')}`;
+  const earned = theme.missions.filter(m => m.status === 'done').reduce((s, m) => s + m.earned_points, 0);
+  const total  = theme.missions.reduce((s, m) => s + m.points, 0);
+  document.getElementById('sheetPts').textContent = `${earned} / ${total} pt`;
+  renderMissions(theme);
+  document.getElementById('sheetOverlay').classList.add('open');
+}
+
+function closeSheet(e) {
+  if (e && e.target !== document.getElementById('sheetOverlay')) return;
+  document.getElementById('sheetOverlay').classList.remove('open');
+  currentTheme = null;
+  pendingPhotoFile = null;
+}
+
+function renderMissions(theme) {
+  const list = document.getElementById('missionList');
+  list.innerHTML = '';
+  theme.missions.forEach(m => {
+    const card = document.createElement('div');
+    card.className = `mission-card${m.status === 'done' ? ' done' : ''}`;
+    card.id = `mc_${m.id}`;
+
+    const typeLabel = m.type === 'text' ? '記述' : m.type === 'photo' ? '写真' : 'チェック';
+    const typeCls   = m.type === 'text' ? 'text' : m.type === 'photo' ? 'photo' : '';
+    const stars     = '★'.repeat(m.stars) + '☆'.repeat(3 - m.stars);
+
+    let inputHTML = '';
+    if (m.type === 'text') {
+      if (m.status === 'done' && m.text_content) {
+        inputHTML = `
+          <div class="submitted-text" id="txt_done_${m.id}">
+            📝 ${escHtml(m.text_content)}
+            <span class="edit-link" onclick="editText('${theme.id}','${m.id}')">編集</span>
+          </div>`;
+      } else {
+        inputHTML = `
+          <div class="mission-input-area" id="txt_area_${m.id}">
+            <textarea class="mission-textarea" id="txt_${m.id}" placeholder="こちらに回答を記述してください...">${escHtml(m.text_content || '')}</textarea>
+            <div class="text-btn-row">
+              <button class="submit-btn" onclick="submitText('${theme.id}','${m.id}')">送信する</button>
+              <button class="clear-btn" onclick="clearText('${m.id}')">クリア</button>
+            </div>
+          </div>`;
+      }
+    } else if (m.type === 'photo') {
+      const prevShow = m.photo_url ? 'show' : '';
+      inputHTML = `
+        <div class="photo-area">
+          <img src="${m.photo_url || ''}" class="photo-preview ${prevShow}" id="prev_${m.id}" alt="提出写真">
+          <div class="upload-btn-wrap">
+            <button class="photo-select-btn" onclick="selectPhoto('${m.id}')">📷 写真を選ぶ</button>
+            <button class="photo-submit-btn" id="psub_${m.id}" onclick="submitPhoto('${theme.id}','${m.id}')" ${!m.photo_url && m.status !== 'done' ? 'disabled' : ''}>送信</button>
+          </div>
+          <input type="file" accept="image/*" style="display:none" id="finput_${m.id}" onchange="onPhotoSelect(event,'${m.id}')">
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="mission-top">
+        <div class="mission-check" onclick="${m.type === 'check' ? `toggleCheck('${theme.id}','${m.id}')` : ''}" style="${m.type !== 'check' ? 'cursor:default;opacity:.4' : ''}">
+          ${m.status === 'done' ? '✓' : ''}
+        </div>
+        <div class="mission-info">
+          <div class="mission-text">${escHtml(m.text)}</div>
+          <div class="mission-meta">
+            <span class="mission-pts">+${m.points}pt</span>
+            <span class="mission-stars">${stars}</span>
+            <span class="mission-type-badge ${typeCls}">${typeLabel}</span>
+          </div>
+        </div>
+      </div>
+      ${inputHTML}
+    `;
+    list.appendChild(card);
+  });
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function toggleCheck(themeId, missionId) {
+  const data = await api('/api/team/submit', {
+    method: 'POST',
+    body: JSON.stringify({ theme_id: themeId, mission_id: missionId, mission_type: 'check', toggle: true })
+  });
+  if (data?.success) {
+    const done = data.status === 'done';
+    toast(done ? '✓ ミッション完了！' : 'チェックを外しました');
+    await refreshAndReopen(themeId);
+    if (done) _checkEffects(data, themeId, 'check');
+  }
+}
+
+async function submitText(themeId, missionId) {
+  const text = document.getElementById(`txt_${missionId}`)?.value?.trim();
+  const btn = document.querySelector(`#mc_${missionId} .submit-btn`);
+  if (!text) {
+    // テキストが空 → ミッションをリセット（未完了に戻す）
+    if (btn) { btn.disabled = true; btn.textContent = '処理中...'; }
+    const data = await api('/api/team/submit', {
+      method: 'POST',
+      body: JSON.stringify({ theme_id: themeId, mission_id: missionId, mission_type: 'text', reset: true })
+    });
+    if (data?.success) { toast('記述をリセットしました'); await refreshAndReopen(themeId); }
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = '送信中...'; }
+  const data = await api('/api/team/submit', {
+    method: 'POST',
+    body: JSON.stringify({ theme_id: themeId, mission_id: missionId, mission_type: 'text', text_content: text })
+  });
+  if (data?.success) {
+    toast('📝 記述を送信しました！');
+    await refreshAndReopen(themeId);
+    _checkEffects(data, themeId, 'text');
+  }
+}
+
+function editText(themeId, missionId) {
+  const theme = mandalaData.themes.find(t => t.id === themeId);
+  const mission = theme?.missions.find(m => m.id === missionId);
+  const doneEl = document.getElementById(`txt_done_${missionId}`);
+  if (doneEl) {
+    doneEl.outerHTML = `
+      <div class="mission-input-area" id="txt_area_${missionId}">
+        <textarea class="mission-textarea" id="txt_${missionId}">${escHtml(mission?.text_content || '')}</textarea>
+        <div class="text-btn-row">
+          <button class="submit-btn" onclick="submitText('${themeId}','${missionId}')">更新する</button>
+          <button class="clear-btn" onclick="clearText('${missionId}')">クリア</button>
+        </div>
+      </div>`;
+  }
+}
+
+function clearText(missionId) {
+  const ta = document.getElementById(`txt_${missionId}`);
+  if (ta) { ta.value = ''; ta.focus(); }
+}
+
+// ===== 写真圧縮（Canvas使用）=====
+async function compressImage(file) {
+  const MAX_WIDTH = 1280;
+  const QUALITY   = 0.72; // 約70% → スマホ3MBが300KB前後に
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > MAX_WIDTH) {
+        height = Math.round(height * MAX_WIDTH / width);
+        width  = MAX_WIDTH;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width  = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(resolve, 'image/jpeg', QUALITY);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function blobToBase64(blob) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function selectPhoto(missionId) {
+  document.getElementById(`finput_${missionId}`).click();
+}
+
+function onPhotoSelect(e, missionId) {
+  const file = e.target.files[0];
+  if (!file) return;
+  pendingPhotoFile = file;
+  pendingPhotoMissionId = missionId;
+  const prev = document.getElementById(`prev_${missionId}`);
+  prev.src = URL.createObjectURL(file);
+  prev.classList.add('show');
+  document.getElementById(`psub_${missionId}`).disabled = false;
+}
+
+async function submitPhoto(themeId, missionId) {
+  const file = pendingPhotoFile;
+  const btn  = document.getElementById(`psub_${missionId}`);
+  if (!file) { toast('写真を選択してください'); return; }
+
+  btn.disabled = true; btn.textContent = '📦 圧縮中...';
+  try {
+    // ① 圧縮（スマホ3MB → 約300KB）
+    const compressed  = await compressImage(file);
+    const sizeBefore  = (file.size / 1024).toFixed(0);
+    const sizeAfter   = (compressed.size / 1024).toFixed(0);
+    btn.textContent = `📤 送信中... (${sizeAfter}KB)`;
+
+    // ② base64変換 → JSON送信
+    const imageBase64 = await blobToBase64(compressed);
+    const res = await fetch('/api/team/upload', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ theme_id: themeId, mission_id: missionId, imageBase64 })
+    });
+    const data = await res.json();
+
+    if (data?.success) {
+      toast(`📸 送信完了！ ${sizeBefore}KB → ${sizeAfter}KB`);
+      pendingPhotoFile = null;
+      await refreshAndReopen(themeId);
+      _checkEffects(data, themeId, 'photo');
+    } else {
+      throw new Error(data.error || '送信失敗');
+    }
+  } catch (e) {
+    toast('エラー: ' + e.message);
+    btn.disabled = false; btn.textContent = '送信';
+  }
+}
+
+async function refreshAndReopen(themeId) {
+  await loadMandala();
+  const theme = mandalaData.themes.find(t => t.id === themeId);
+  if (theme) openSheet(theme);
+}
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+function logout() {
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+// =====================================================
+// ===== パチンコ風 音・エフェクトエンジン =====
+// =====================================================
+let _audioCtx = null, _compressor = null;
+function _ac() {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    _compressor = _audioCtx.createDynamicsCompressor();
+    _compressor.threshold.value = -16; _compressor.ratio.value = 10;
+    _compressor.attack.value = 0.002; _compressor.release.value = 0.18;
+    _compressor.connect(_audioCtx.destination);
+  }
+  return _audioCtx;
+}
+function _out() { _ac(); return _compressor; }
+function _tone(freq, type, dur, vol, delay=0) {
+  const ctx=_ac(), osc=ctx.createOscillator(), g=ctx.createGain();
+  osc.connect(g); g.connect(_out());
+  osc.type=type; osc.frequency.value=freq;
+  g.gain.setValueAtTime(0,ctx.currentTime+delay);
+  g.gain.linearRampToValueAtTime(vol,ctx.currentTime+delay+0.01);
+  g.gain.linearRampToValueAtTime(0,ctx.currentTime+delay+dur);
+  osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+dur);
+}
+function _noise(dur, vol, delay=0, freq=800) {
+  const ctx=_ac(), buf=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate);
+  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=ctx.createBufferSource(); src.buffer=buf;
+  const f=ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=freq; f.Q.value=0.5;
+  const g=ctx.createGain();
+  src.connect(f); f.connect(g); g.connect(_out());
+  g.gain.setValueAtTime(vol,ctx.currentTime+delay);
+  g.gain.linearRampToValueAtTime(0,ctx.currentTime+delay+dur);
+  src.start(ctx.currentTime+delay);
+}
+function _kick(delay=0, vol=1.4) {
+  const ctx=_ac(), osc=ctx.createOscillator(), g=ctx.createGain();
+  osc.connect(g); g.connect(_out());
+  osc.frequency.setValueAtTime(220,ctx.currentTime+delay);
+  osc.frequency.exponentialRampToValueAtTime(32,ctx.currentTime+delay+0.14);
+  g.gain.setValueAtTime(vol,ctx.currentTime+delay);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.5);
+  osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+0.5);
+}
+function _snare(delay=0, vol=0.8) { _noise(0.22, vol, delay, 1800); }
+function _brass(rootFreq, delay=0, dur=0.7, vol=0.18) {
+  [1,1.26,1.5,2].forEach(r => [-10,0,10].forEach(det => {
+    const ctx=_ac(), osc=ctx.createOscillator(), g=ctx.createGain();
+    osc.type='sawtooth'; osc.frequency.value=rootFreq*r; osc.detune.value=det;
+    osc.connect(g); g.connect(_out());
+    g.gain.setValueAtTime(0,ctx.currentTime+delay);
+    g.gain.linearRampToValueAtTime(vol,ctx.currentTime+delay+0.025);
+    g.gain.linearRampToValueAtTime(0,ctx.currentTime+delay+dur);
+    osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+dur);
+  }));
+}
+function _metal(freq, delay=0, vol=0.18) {
+  [1,2.756,4.103].forEach(r => {
+    const ctx=_ac(), osc=ctx.createOscillator(), g=ctx.createGain();
+    osc.type='sine'; osc.frequency.value=freq*r;
+    osc.connect(g); g.connect(_out());
+    g.gain.setValueAtTime(vol,ctx.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.4);
+    osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+0.4);
+  });
+}
+function _impact(delay=0) {
+  _kick(delay,1.8);
+  const ctx=_ac(), osc=ctx.createOscillator(), g=ctx.createGain();
+  osc.type='triangle'; osc.frequency.value=48;
+  osc.connect(g); g.connect(_out());
+  g.gain.setValueAtTime(0.5,ctx.currentTime+delay);
+  g.gain.linearRampToValueAtTime(0,ctx.currentTime+delay+1.0);
+  osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+1.0);
+  _noise(0.35, 0.9, delay, 300);
+}
+
+// ミッション完了音（短い）
+function sfxMissionDone() {
+  _ac();
+  _kick(0, 0.8);
+  [880,1175,1568].forEach((f,i) => { _tone(f,'sine',0.18,0.15,i*0.06); _metal(f,i*0.06,0.08); });
+}
+// テキスト・写真送信音
+function sfxSubmit() {
+  _ac();
+  [660,880,1108,1320].forEach((f,i) => _tone(f,'sine',0.2,0.12,i*0.055));
+  _kick(0, 0.6);
+}
+// テーマ全完了ファンファーレ
+function sfxThemeClear() {
+  _impact(0);
+  const ctx=_ac(); const riser=ctx.createOscillator(), rg=ctx.createGain();
+  riser.type='sawtooth';
+  riser.frequency.setValueAtTime(80,ctx.currentTime+0.1);
+  riser.frequency.exponentialRampToValueAtTime(700,ctx.currentTime+1.4);
+  riser.connect(rg); rg.connect(_out());
+  rg.gain.setValueAtTime(0,ctx.currentTime+0.1); rg.gain.linearRampToValueAtTime(0.2,ctx.currentTime+1.3); rg.gain.linearRampToValueAtTime(0,ctx.currentTime+1.4);
+  riser.start(ctx.currentTime+0.1); riser.stop(ctx.currentTime+1.5);
+  // ファンファーレメロディ
+  const mel=[[261,.22],[329,.22],[392,.22],[523,.33],[659,.33],[784,.44],[1047,.55],[1047,.11],[1175,.11],[1047,.8]];
+  let t=1.5; mel.forEach(([f,d]) => { _brass(f,t,d*.85,0.22); _tone(f,'sine',d*.8,0.08,t); t+=d; });
+  [0,.22,.44,.55,.66,.77,.88,.99].forEach((t,i) => { _kick(t,1.0+i*.04); if(i%2===1) _snare(t+.11,.7); });
+}
+// ランクアップ音
+function sfxRankUp() {
+  _ac();
+  _impact(0);
+  [523,659,784,1047,1319].forEach((f,i) => { _brass(f,0.4+i*0.12,0.3,0.22); _tone(f,'square',0.12,0.1,0.4+i*0.12); });
+  setTimeout(() => { for(let i=0;i<6;i++) { _metal(1400+i*200,i*.05,.2); _kick(i*.05,.5); } }, 2000);
+}
+
+// ===== パーティクル =====
+const _cvs = document.getElementById('effectCanvas');
+const _pctx = _cvs.getContext('2d');
+let _particles = [], _pTick = 0, _pRunning = false;
+function _resizeCvs() { _cvs.width=window.innerWidth; _cvs.height=window.innerHeight; }
+_resizeCvs(); window.addEventListener('resize', _resizeCvs);
+
+function _spawnBurst(x, y, count, color, speed=2.5) {
+  for(let i=0;i<count;i++) {
+    const a=Math.random()*Math.PI*2;
+    const s=(1.5+Math.random()*3)*speed;
+    _particles.push({ x,y, vx:Math.cos(a)*s, vy:Math.sin(a)*s-speed, life:1, decay:0.015+Math.random()*.02, size:2+Math.random()*5, color });
+  }
+  if(!_pRunning) _particleLoop();
+}
+function _particleLoop() {
+  _pRunning = _particles.length > 0;
+  if(!_pRunning) { _pctx.clearRect(0,0,_cvs.width,_cvs.height); return; }
+  requestAnimationFrame(_particleLoop);
+  _pctx.clearRect(0,0,_cvs.width,_cvs.height);
+  _particles = _particles.filter(p=>p.life>0);
+  for(const p of _particles) {
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.life-=p.decay;
+    _pctx.globalAlpha=Math.max(0,p.life);
+    _pctx.fillStyle=p.color; _pctx.shadowColor=p.color; _pctx.shadowBlur=8;
+    _pctx.beginPath(); _pctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2); _pctx.fill();
+  }
+  _pctx.globalAlpha=1; _pctx.shadowBlur=0;
+}
+
+// ===== フラッシュ =====
+const _flashEl=document.getElementById('flashEl');
+const _borderEl=document.getElementById('borderGlowEl');
+function _flash(color='white', dur=150, opacity=0.85) {
+  _flashEl.style.background=color; _flashEl.style.transition='none'; _flashEl.style.opacity=opacity;
+  setTimeout(()=>{ _flashEl.style.transition=`opacity ${dur*.8}ms`; _flashEl.style.opacity=0; }, dur*.2);
+}
+function _borderGlow(cls, ms=1200) {
+  _borderEl.className=cls;
+  setTimeout(()=>{ _borderEl.className=''; }, ms);
+}
+
+// ===== エフェクト公開関数 =====
+function fxCheck(cx, cy) {           // チェック完了
+  _ac();
+  sfxMissionDone();
+  _flash('#00e5ff', 200, 0.5);
+  _borderGlow('cyan', 800);
+  _spawnBurst(cx||window.innerWidth/2, cy||window.innerHeight/2, 30, '#00e5ff');
+  _spawnBurst(cx||window.innerWidth/2, cy||window.innerHeight/2, 20, '#ffffff', 2);
+}
+function fxSubmit(cx, cy) {          // テキスト・写真送信
+  _ac();
+  sfxSubmit();
+  _flash('#ffd700', 180, 0.45);
+  _borderGlow('gold', 700);
+  _spawnBurst(cx||window.innerWidth/2, cy||window.innerHeight/2, 25, '#ffd700');
+  _spawnBurst(cx||window.innerWidth/2, cy||window.innerHeight/2, 15, '#ffffff', 1.5);
+}
+function fxThemeClear() {            // テーマ全完了 → スロット777 → ねこ
+  _ac();
+  runSlotThen(() => {
+    sfxThemeClear();
+    for(let i=0;i<3;i++) setTimeout(()=>_flash('white',200,0.9), i*150);
+    _borderGlow('gold', 3000);
+    const cx=window.innerWidth/2, cy=window.innerHeight/2;
+    _spawnBurst(cx,cy,80,'#ffd700',3); _spawnBurst(cx,cy,60,'#ff8800',2.5); _spawnBurst(cx,cy,40,'#ffffff',2);
+    setTimeout(showCat, 600);
+  });
+}
+function fxRankUp() {                // ランクアップ → スロット777 → ねこ
+  _ac();
+  runSlotThen(() => {
+    sfxRankUp();
+    for(let i=0;i<4;i++) setTimeout(()=>_flash(i%2===0?'#ffd700':'white',150,0.8), i*120);
+    _borderGlow('gold', 2500);
+    const cx=window.innerWidth/2, cy=window.innerHeight/2;
+    _spawnBurst(cx,cy,100,'#ffd700',3.5); _spawnBurst(cx,cy,60,'#ff4400',2.5);
+    setTimeout(showCat, 500);
+  });
+}
+
+// ===== スロット777演出 =====
+const _slotNums = [3,7,1,5,2,9,4,8,6,7]; // ストリップ数列（最後が7）
+
+function _buildStrip(id) {
+  const strip = document.getElementById(id);
+  strip.innerHTML = '';
+  _slotNums.forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'sl-num' + (n === 7 ? ' sv' : '');
+    div.textContent = n;
+    strip.appendChild(div);
+  });
+}
+
+function _spinOneReel(stripId, duration, delay) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const strip = document.getElementById(stripId);
+      const cellH = strip.querySelector('.sl-num').offsetHeight || 54;
+      let elapsed = 0, speed = 5, pos = 0;
+      const slowAt = duration * 0.6;
+      const timer = setInterval(() => {
+        elapsed += 16;
+        if (elapsed > slowAt) speed = Math.max(0.5, speed * 0.94);
+        pos += speed;
+        const total = cellH * _slotNums.length;
+        if (pos >= total) pos -= total;
+        strip.style.top = `-${pos}px`;
+        if (elapsed >= duration) {
+          clearInterval(timer);
+          // 7を中央に合わせる（最後の7は index 9 → 9*cellH - 1*cellH = 8*cellH で中央）
+          const targetPos = cellH * 8; // 8番目が中央に来る位置
+          strip.style.transition = 'top 0.18s cubic-bezier(0.25,1.5,0.5,1)';
+          strip.style.top = `-${targetPos}px`;
+          setTimeout(() => { strip.style.transition = ''; resolve(); }, 220);
+        }
+      }, 16);
+    }, delay);
+  });
+}
+
+async function runSlotThen(callback) {
+  // ストリップ構築
+  ['ss1','ss2','ss3'].forEach(_buildStrip);
+  ['ss1','ss2','ss3'].forEach(id => {
+    document.getElementById(id).style.top = '0';
+    document.getElementById(id).style.transition = '';
+  });
+  document.getElementById('slotTitle').style.opacity = '0';
+  document.getElementById('slotOverlay').classList.add('show');
+
+  // リール回転音
+  playReelSpinSfx();
+
+  // 3リール順番に停止
+  await Promise.all([
+    _spinOneReel('ss1', 1800, 0),
+    _spinOneReel('ss2', 2300, 200),
+    _spinOneReel('ss3', 2800, 400),
+  ]);
+
+  // 各リール停止時フラッシュ（タイミングをPromiseと合わせる）
+  [1900, 2500].forEach(t => setTimeout(() => {
+    _flash('#00e5ff', 250, 0.6);
+    _kick(0, 0.8); _metal(1200, 0, 0.15);
+  }, t));
+
+  // 777揃い！
+  setTimeout(() => {
+    // 大フラッシュ連発
+    [0,130,260].forEach(t => setTimeout(() => _flash('white', 180, 0.9), t));
+    _impact(0);
+    _spawnBurst(window.innerWidth/2, window.innerHeight/2, 80, '#ffd700', 3);
+    _spawnBurst(window.innerWidth/2, window.innerHeight/2, 50, '#00e5ff', 2.5);
+    document.getElementById('slotTitle').style.opacity = '1';
+  }, 100);
+
+  // 1.5秒後にスロット閉じてコールバック
+  setTimeout(() => {
+    document.getElementById('slotOverlay').classList.remove('show');
+    callback();
+  }, 2200);
+}
+
+function playReelSpinSfx() {
+  for (let i = 0; i < 20; i++) {
+    const ctx = _ac(), out = _out();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let j = 0; j < d.length; j++) d[j] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 600 + i * 30; f.Q.value = 1;
+    const g = ctx.createGain();
+    src.connect(f); f.connect(g); g.connect(out);
+    g.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.06);
+    g.gain.linearRampToValueAtTime(0, ctx.currentTime + i * 0.06 + 0.05);
+    src.start(ctx.currentTime + i * 0.06);
+  }
+}
+
+// ===== ねこ演出 =====
+let _catTimer = null;
+function showCat() {
+  const overlay = document.getElementById('catOverlay');
+  const aura    = document.getElementById('catAuraEl');
+  const img     = document.getElementById('catImgEl');
+  const hint    = document.getElementById('catTapHint');
+  // 初期化
+  img.classList.remove('animating');
+  img.style.transition = 'opacity 1s, transform 1.2s cubic-bezier(0.34,1.56,0.64,1)';
+  img.style.opacity = '0';
+  img.style.transform = 'translate(-50%,-50%) scale(0.2)';
+  aura.classList.remove('visible');
+  overlay.classList.add('show');
+  hint.style.opacity = '0';
+
+  // オーラ→ズームイン
+  setTimeout(() => { aura.classList.add('visible'); }, 100);
+  setTimeout(() => {
+    img.style.opacity = '1';
+    img.style.transform = 'translate(-50%,-50%) scale(1)';
+  }, 300);
+  // ふわふわ開始
+  setTimeout(() => {
+    img.style.transition = '';
+    img.style.transform = '';
+    img.classList.add('animating');
+    hint.style.opacity = '1';
+    hint.style.transition = 'opacity 0.5s';
+  }, 1600);
+  // 8秒後に自動非表示
+  clearTimeout(_catTimer);
+  _catTimer = setTimeout(hideCat, 8000);
+}
+function hideCat() {
+  clearTimeout(_catTimer);
+  const overlay = document.getElementById('catOverlay');
+  const aura    = document.getElementById('catAuraEl');
+  const img     = document.getElementById('catImgEl');
+  const hint    = document.getElementById('catTapHint');
+  img.style.transition = 'opacity 0.4s, transform 0.4s';
+  img.style.opacity = '0';
+  img.style.transform = 'translate(-50%,-50%) scale(0.3)';
+  img.classList.remove('animating');
+  aura.classList.remove('visible');
+  hint.style.opacity = '0';
+  setTimeout(() => overlay.classList.remove('show'), 400);
+}
+
+// ===== ミッション完了判定 =====
+function _checkEffects(data, themeId, missionType) {
+  if(!data?.success) return;
+  setTimeout(() => {
+    if(!mandalaData) return;
+    const theme = mandalaData.themes.find(t => t.id === themeId);
+    if(theme) {
+      const done = theme.missions.filter(m => m.status==='done').length;
+      // テーマ全完了 → そのテーマ専用のシンガポール演出
+      if(done === theme.missions.length) {
+        const fx = window.GTS_THEME_FX && window.GTS_THEME_FX[themeId];
+        if(fx) { try { fx(); } catch(e){ console.error(e); fxThemeClear(); } }
+        else fxThemeClear();
+        return;
+      }
+    }
+    // 通常（1ミッション完了）エフェクト
+    if(missionType === 'check') fxCheck();
+    else fxSubmit();
+  }, 300);
+}
+
+loadMandala();
+</script>
+
+<!-- テーマ別演出エンジン -->
+<script src="/fx/engine.js"></script>
+<script src="/fx/theme0.js"></script>
+<script src="/fx/theme1.js"></script>
+<script src="/fx/theme2.js"></script>
+<script src="/fx/theme3.js"></script>
+<script src="/fx/theme4.js"></script>
+<script src="/fx/theme5.js"></script>
+<script src="/fx/theme6.js"></script>
+<script src="/fx/theme7.js"></script>
+<script src="/noto-emoji.js" defer></script>
+</body>
+</html>

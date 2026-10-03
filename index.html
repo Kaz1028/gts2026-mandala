@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>GTS2026 Singapore</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root, html, body { color-scheme: light only; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #c4131f 0%, #8c0a14 50%, #1a0a2e 100%);
+  font-family: 'Noto Sans JP','Hiragino Sans',sans-serif;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px 16px;
+}
+
+/* ヘッダー */
+.header { text-align: center; color: white; margin-bottom: 36px; }
+.header .emoji { font-size: 60px; line-height: 1; }
+.header h1 { font-size: 30px; font-weight: 900; letter-spacing: 4px; margin-top: 10px; }
+.header p  { font-size: 13px; opacity: .65; margin-top: 6px; letter-spacing: 1px; }
+
+/* メインカード */
+.card {
+  background: rgba(255,255,255,.95);
+  border-radius: 22px; padding: 28px 24px;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+}
+
+/* チーム選択ボタン */
+.team-select-btn {
+  width: 100%; padding: 18px;
+  background: linear-gradient(135deg, #c4131f, #8c0a14);
+  color: white; border: none; border-radius: 14px;
+  font-size: 18px; font-weight: 900; cursor: pointer;
+  letter-spacing: 2px;
+  box-shadow: 0 6px 20px rgba(196,19,31,.4);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: transform .15s, box-shadow .15s;
+}
+.team-select-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(196,19,31,.5); }
+.team-select-btn .arrow { font-size: 14px; opacity: .8; }
+
+.divider {
+  display: flex; align-items: center; gap: 12px; margin: 20px 0;
+  color: #bbb; font-size: 12px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: #e8e8e8;
+}
+
+/* 管理者フォーム */
+.admin-label { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 2px; text-align: center; margin-bottom: 14px; }
+.field { margin-bottom: 12px; }
+.field input {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid #e0e0e0; border-radius: 10px;
+  font-size: 15px; outline: none;
+  background: #fff !important; color: #333 !important;
+  -webkit-text-fill-color: #333 !important; forced-color-adjust: none;
+  transition: border-color .2s;
+}
+.field input::placeholder { color: #bbb !important; -webkit-text-fill-color: #bbb !important; }
+.field input:focus { border-color: #c4131f; }
+.admin-btn {
+  width: 100%; padding: 12px; border: 1.5px solid #ddd;
+  border-radius: 10px; background: #f8f8f8; color: #666;
+  font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+  transition: background .15s;
+}
+.admin-btn:hover { background: #f0f0f0; }
+.error {
+  background: #fff0f0; border: 1px solid #ffaaaa;
+  border-radius: 8px; padding: 10px; color: #c4131f;
+  font-size: 13px; margin-top: 10px; display: none; text-align: center;
+}
+
+/* ===== チーム選択モーダル ===== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.6); z-index: 200;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; animation: fadeIn .2s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: #fff; border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 480px;
+  padding: 0 0 32px;
+  animation: slideUp .25s cubic-bezier(.22,1,.36,1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 12px auto 0; }
+.modal-header {
+  text-align: center; padding: 14px 20px 12px;
+  font-size: 15px; font-weight: 900; color: #333;
+  border-bottom: 1px solid #f0f0f0;
+}
+.modal-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 10px; padding: 16px 16px 0;
+}
+.modal-team-btn {
+  aspect-ratio: 1/1;
+  background: #fff5f5; border: 2px solid #ffd0d0;
+  border-radius: 14px; cursor: pointer;
+  font-size: 17px; font-weight: 900; color: #c4131f;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px; transition: all .12s;
+}
+.modal-team-btn:active { background: #c4131f; color: #fff; border-color: #c4131f; transform: scale(.93); }
+.modal-team-btn .t-lbl { font-size: 8px; font-weight: 500; color: #e88; letter-spacing: 1px; }
+.modal-team-btn:active .t-lbl { color: rgba(255,255,255,.7); }
+
+/* ローディング */
+.loading-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.65); z-index: 300;
+  align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+}
+.loading-overlay.show { display: flex; }
+.spinner {
+  width: 48px; height: 48px; border: 4px solid rgba(255,255,255,.2);
+  border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite;
+}
+.loading-overlay p { color: white; font-size: 15px; font-weight: 700; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.noto-emoji { height: 1em; width: 1em; vertical-align: -0.125em; margin: 0 .05em; display: inline-block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="emoji">🦁</div>
+  <h1>GTS2026</h1>
+  <p>Singapore — マンダラチャートシステム</p>
+</div>
+
+<div class="card">
+  <!-- チーム選択ボタン -->
+  <button class="team-select-btn" id="openModal">
+    チームを選択する
+    <span class="arrow">▼</span>
+  </button>
+
+  <div class="field" style="margin-top:16px">
+    <label for="teamPw">チームのパスワード</label>
+    <input type="password" id="teamPw" placeholder="配布されたパスワード" autocomplete="current-password">
+  </div>
+  <button class="admin-btn" id="teamLoginBtn" disabled>チームとしてログイン</button>
+  <div class="error" id="teamError" role="alert"></div>
+
+  <div class="divider">管理者の方はこちら</div>
+
+  <!-- 管理者フォーム -->
+  <div class="admin-label">🔐 ADMIN LOGIN</div>
+  <div class="field">
+    <input type="text" id="adminId" placeholder="管理者ID" autocomplete="username" autocapitalize="none">
+  </div>
+  <div class="field">
+    <input type="password" id="adminPw" placeholder="パスワード" autocomplete="current-password">
+  </div>
+  <button class="admin-btn" id="adminBtn">管理者としてログイン</button>
+  <div class="error" id="error"></div>
+</div>
+
+<!-- チーム選択モーダル -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">あなたのチーム番号を選んでください</div>
+    <div class="modal-grid" id="modalGrid"></div>
+  </div>
+</div>
+
+<!-- ローディング -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <p id="loadingText">ログイン中...</p>
+</div>
+
+<script>
+// 既ログイン済みならリダイレクト
+const tok = sessionStorage.getItem('gts_token');
+if (tok) {
+  window.location.href = sessionStorage.getItem('gts_role') === 'admin' ? '/admin.html' : '/team.html';
+}
+
+// モーダルにチームボタン生成（1〜22）
+let selectedTeam = null;
+const modalGrid = document.getElementById('modalGrid');
+for (let i = 1; i <= 22; i++) {
+  const btn = document.createElement('button');
+  btn.className = 'modal-team-btn';
+  btn.innerHTML = `${i}<span class="t-lbl">TEAM</span>`;
+  btn.addEventListener('click', () => {
+    selectedTeam = i;
+    closeModal();
+    document.getElementById('openModal').textContent = 'TEAM ' + i + ' を選択中（変更）';
+    document.getElementById('teamLoginBtn').disabled = false;
+    document.getElementById('teamPw').value = '';
+    document.getElementById('teamError').style.display = 'none';
+    document.getElementById('teamPw').focus();
+  });
+  modalGrid.appendChild(btn);
+}
+
+// モーダル開閉
+document.getElementById('openModal').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.add('open');
+});
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// チームログイン
+document.getElementById('teamLoginBtn').addEventListener('click', loginTeam);
+document.getElementById('teamPw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') loginTeam();
+});
+async function loginTeam() {
+  const num = selectedTeam;
+  const password = document.getElementById('teamPw').value;
+  const errEl = document.getElementById('teamError');
+  errEl.style.display = 'none';
+  if (!num || !password) {
+    errEl.textContent = 'チームを選択し、配布されたパスワードを入力してください';
+    errEl.style.display = 'block';
+    return;
+  }
+  closeModal();
+  showLoading(`TEAM ${num} でログイン中...`);
+  try {
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id: `GTS2026_${num}`, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    sessionStorage.setItem('gts_token', data.token);
+    sessionStorage.setItem('gts_role', data.role);
+    sessionStorage.setItem('gts_team', data.team_number);
+    window.location.href = '/team.html';
+  } catch (e) {
+    hideLoading();
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+// 管理者ログイン
+async function loginAdmin() {
+  const login_id = document.getElementById('adminId').value.trim();
+  const password = document.getElementById('adminPw').value;
+  const errEl    = document.getElementById('error');
+  errEl.style.display = 'none';
+  if (!login_id || !password) {
+    errEl.textContent = 'IDとパスワードを入力してください';
+    errEl.style.display = 'block'; return;
+  }
+  showLoading('管理者ログイン中...');
+  try {
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    sessionStorage.setItem('gts_token', data.token);
+    sessionStorage.setItem('gts_role', data.role);
+    window.location.href = '/admin.html';
+  } catch (e) {
+    hideLoading();
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function showLoading(text) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loading').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loading').classList.remove('show');
+}
+
+document.getElementById('adminBtn').addEventListener('click', loginAdmin);
+document.getElementById('adminPw').addEventListener('keydown', e => { if (e.key === 'Enter') loginAdmin(); });
+</script>
+<script src="/noto-emoji.js" defer></script>
+</body>
+</html>

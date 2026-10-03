@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>GTS2026 演出プレビュー</title>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&family=RocknRoll+One&family=Mochiy+Pop+One&family=DotGothic16&family=Dela+Gothic+One&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+* { box-sizing:border-box; }
+body{margin:0;min-height:100vh;background:linear-gradient(160deg,#c4131f,#1a0a2e);font-family:'Mochiy Pop One',sans-serif;color:#fff;padding:24px 16px;}
+h1{text-align:center;font-size:22px;letter-spacing:2px;margin:8px 0 4px;}
+p.sub{text-align:center;font-size:12px;opacity:.7;margin:0 0 20px;}
+#pad{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:520px;margin:0 auto;}
+@media(min-width:560px){#pad{grid-template-columns:repeat(4,1fr);}}
+button{padding:22px 8px;font-size:15px;font-weight:700;border:none;border-radius:14px;
+  background:rgba(255,255,255,.95);color:#c4131f;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);
+  font-family:'Mochiy Pop One',sans-serif;transition:transform .12s;}
+button:active{transform:scale(.94);}
+.tip{text-align:center;margin-top:20px;font-size:12px;opacity:.6;}
+.noto-emoji{height:1em;width:1em;vertical-align:-0.125em;margin:0 .04em;display:inline-block;}
+</style>
+</head>
+<body>
+<h1>🇸🇬 GTS2026 演出プレビュー</h1>
+<p class="sub">ボタンをタップで各テーマの完成演出を再生（音はタップ後に有効）</p>
+<div id="pad">
+  <button onclick="run('theme_0')">🇸🇬 建国記念日<br><small>(マーライオン・花火)</small></button>
+  <button onclick="run('theme_1')">🛕 宗教<br><small>(日の出・光)</small></button>
+  <button onclick="run('theme_2')">🍜 食文化<br><small>(HAWKER FEAST)</small></button>
+  <button onclick="run('theme_3')">🏙 日常生活<br><small>(JACKPOT・発見)</small></button>
+  <button onclick="run('theme_4')">💬 言語<br><small>(4言語・国旗)</small></button>
+  <button onclick="run('theme_5')">🚫 マナー・ルール<br><small>(777→ねこ確変)</small></button>
+  <button onclick="run('theme_6')">🤝 ふれあい<br><small>(手が集結)</small></button>
+  <button onclick="run('theme_7')">🌐 国際的視野<br><small>(地球・ハート)</small></button>
+</div>
+<div class="tip">画面タップで演出をスキップできます</div>
+
+<script src="/fx/engine.js"></script>
+<script src="/fx/theme0.js"></script>
+<script src="/fx/theme1.js"></script>
+<script src="/fx/theme2.js"></script>
+<script src="/fx/theme3.js"></script>
+<script src="/fx/theme4.js"></script>
+<script src="/fx/theme5.js"></script>
+<script src="/fx/theme6.js"></script>
+<script src="/fx/theme7.js"></script>
+<script>
+function run(id){ try{ window.GTS_THEME_FX[id](); }catch(e){ alert('ERR: '+e.message); } }
+</script>
+<script src="/noto-emoji.js" defer></script>
+</body>
+</html>
