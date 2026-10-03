@@ -1,6 +1,5 @@
 const { sql } = require('@vercel/postgres');
 const { getSeedTeams } = require('./config');
-const { hashPassword, verifyPassword } = require('./passwords');
 
 async function initDB() {
   const teams = getSeedTeams();
@@ -38,23 +37,21 @@ async function initDB() {
     )
   `;
 
-  // Only explicitly configured teams are created. Existing credentials stay unchanged.
+  // Teams 1..teamCount are created. The password column stays empty (kept for older databases).
   for (const team of teams) {
-    const passwordHash = await hashPassword(team.password);
     await sql`
       INSERT INTO teams (login_id, password, team_number)
-      VALUES (${team.login_id}, ${passwordHash}, ${team.team_number})
+      VALUES (${team.login_id}, '', ${team.team_number})
       ON CONFLICT (login_id) DO NOTHING
     `;
   }
 }
 
-async function getTeamByLogin(loginId, password) {
+async function getTeamByLogin(loginId) {
   const { rows } = await sql`
-    SELECT * FROM teams WHERE login_id = ${loginId}
+    SELECT login_id, team_number FROM teams WHERE login_id = ${loginId}
   `;
-  const team = rows[0];
-  return team && await verifyPassword(password, team.password) ? team : null;
+  return rows[0] || null;
 }
 
 async function getSubmissions(teamNumber) {

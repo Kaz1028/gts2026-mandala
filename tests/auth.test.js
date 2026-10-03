@@ -33,20 +33,20 @@ async function call(handler, method, body, token) {
 }
 
 test('credential configuration and login boundaries (no external services)', async t => {
-  const keys = ['JWT_SECRET', 'ADMIN_ID', 'ADMIN_PASSWORD', 'TEAM_CREDENTIALS_JSON'];
+  const keys = ['JWT_SECRET', 'ADMIN_ID', 'ADMIN_PASSWORD'];
   const saved = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   const secret = randomBytes(32).toString('hex');
   const password = randomBytes(24).toString('hex');
   let dbCalls = 0;
   const db = {
-    async getTeamByLogin(id, pw) {
+    async getTeamByLogin(id) {
       dbCalls++;
-      return id === (event.loginPrefix + '1') && pw === password
-        ? { login_id: id, team_number: 1 } : null;
+      return id === (event.loginPrefix + '1') ? { login_id: id, team_number: 1 } : null;
     },
     async initDB() { dbCalls++; },
   };
-  const login = load('api/auth-login.js', { './lib/db': db, './lib/login-limit': { async consumeLoginAttempt() { return true; }, async clearLoginAttempts() {} } });
+  let limitCalls = 0;
+  const login = load('api/auth-login.js', { './lib/db': db, './lib/login-limit': { async consumeLoginAttempt() { limitCalls++; return true; }, async clearLoginAttempts() {} } });
   const setup = load('api/setup.js', { './lib/db': db });
   try {
     keys.forEach(key => delete process.env[key]);
@@ -79,12 +79,21 @@ test('credential configuration and login boundaries (no external services)', asy
       assert.equal((await call(login, 'POST', { login_id: 'organizer', password: 'wrong' })).code, 401);
       assert.equal(dbCalls, 0);
     });
-    await t.test('team credentials are passed to the database and determine success', async () => {
-      assert.equal((await call(login, 'POST', { login_id: (event.loginPrefix + '1'), password: 'wrong' })).code, 401);
-      const res = await call(login, 'POST', { login_id: (event.loginPrefix + '1'), password });
+    await t.test('teams log in with their ID only; unknown teams are rejected', async () => {
+      const before = limitCalls;
+      const res = await call(login, 'POST', { login_id: (event.loginPrefix + '1') });
       assert.equal(res.code, 200);
       assert.equal(res.data.role, 'team');
       assert.equal(res.data.team_number, 1);
+      const claims = verifyToken({ headers: { authorization: 'Bearer ' + res.data.token } });
+      assert.equal(claims.role, 'team');
+      assert.equal(claims.team_number, 1);
+      assert.equal((await call(login, 'POST', { login_id: (event.loginPrefix + '999') })).code, 401);
+      assert.equal(limitCalls, before);
+    });
+    await t.test('admin login still requires the admin password', async () => {
+      assert.equal((await call(login, 'POST', { login_id: 'organizer' })).code, 400);
+      assert.equal((await call(login, 'POST', { login_id: 'organizer', password: '' })).code, 400);
     });
     await t.test('invalid login input and unsupported methods are rejected', async () => {
       for (const body of [{}, { login_id: {}, password }, { login_id: 'organizer', password: [] }]) {
@@ -114,47 +123,21 @@ test('credential configuration and login boundaries (no external services)', asy
       assert.equal((await call(setup, 'POST', {}, signToken({ role: 'admin' }))).code, 200);
       assert.equal(dbCalls, before + 1);
     });
-    await t.test('no default teams or shared passwords are created', () => {
-      assert.deepEqual(getSeedTeams(), []);
-      process.env.TEAM_CREDENTIALS_JSON = '[]';
-      assert.deepEqual(getSeedTeams(), []);
-      process.env.TEAM_CREDENTIALS_JSON = JSON.stringify([{ team_number: 1, password }]);
-      assert.deepEqual(getSeedTeams(), [{ team_number: 1, login_id: (event.loginPrefix + '1'), password }]);
+    await t.test('teams 1..teamCount are created without passwords', () => {
+      const teams = getSeedTeams();
+      assert.equal(teams.length, event.teamCount);
+      assert.deepEqual(teams[0], { team_number: 1, login_id: (event.loginPrefix + '1') });
+      assert.ok(teams.every(team => !('password' in team)));
     });
-    await t.test('malformed seed data is rejected without exposing its contents', () => {
-      for (const raw of [
-        'invalid', '{}', '[null]',
-        JSON.stringify([{ team_number: 0, password }]),
-        JSON.stringify([{ team_number: event.teamCount + 1, password }]),
-        JSON.stringify([{ team_number: 1, password: 'short' }]),
-        JSON.stringify([{ team_number: 1, password }, { team_number: 1, password }]),
-      ]) {
-        process.env.TEAM_CREDENTIALS_JSON = raw;
-        assert.throws(getSeedTeams, error => !error.message.includes(password));
-      }
-    });
-    await t.test('Postgres seed uses only configured teams and preserves existing credentials', async () => {
-      for (const file of ['api/lib/db.js']) {
-        const queries = [];
-        const pg = load(file, { '@vercel/postgres': {
-          async sql(strings, ...values) { queries.push({ text: strings.join('?'), values }); return { rows: [] }; },
-        } });
-        delete process.env.TEAM_CREDENTIALS_JSON;
-        await pg.initDB();
-        assert.equal(queries.length, 3);
-        queries.length = 0;
-        process.env.TEAM_CREDENTIALS_JSON = JSON.stringify([{ team_number: 1, password }]);
-        await pg.initDB();
-        assert.equal(queries.length, 4);
-        assert.match(queries[3].text, /ON CONFLICT \(login_id\) DO NOTHING/);
-        assert.equal(queries[3].values[0], (event.loginPrefix + '1'));
-        assert.equal(queries[3].values[2], 1);
-        assert.ok(await require('../api/lib/passwords').verifyPassword(password, queries[3].values[1]));
-        queries.length = 0;
-        process.env.TEAM_CREDENTIALS_JSON = '{invalid';
-        await assert.rejects(pg.initDB);
-        assert.equal(queries.length, 0);
-      }
+    await t.test('Postgres seed creates every team once and keeps existing rows', async () => {
+      const queries = [];
+      const pg = load('api/lib/db.js', { '@vercel/postgres': {
+        async sql(strings, ...values) { queries.push({ text: strings.join('?'), values }); return { rows: [] }; },
+      } });
+      await pg.initDB();
+      assert.equal(queries.length, 3 + event.teamCount);
+      assert.match(queries[3].text, /ON CONFLICT \(login_id\) DO NOTHING/);
+      assert.deepEqual(queries[3].values, [(event.loginPrefix + '1'), 1]);
     });
     await t.test('alternate login and auth entry points share the fixed implementation', () => {
       assert.equal(require('../api/auth/login'), require('../api/auth-login'));
@@ -168,7 +151,7 @@ test('credential configuration and login boundaries (no external services)', asy
   }
 });
 
-test('team login page uses entered password, never automatic credentials', async () => {
+test('team login page logs in by choosing a team number, without a password', async () => {
   const elements = new Map();
   function element() {
     return { value: '', style: {}, listeners: {}, children: [], disabled: false,
@@ -195,32 +178,19 @@ test('team login page uses entered password, never automatic credentials', async
   const html = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   vm.runInNewContext(script, context);
-  await elements.get('teamLoginBtn').listeners.click();
-  assert.equal(requests.length, 0);
   assert.equal(elements.get('modalGrid').children.length, event.teamCount);
-  elements.get('modalGrid').children[0].listeners.click();
   assert.equal(requests.length, 0);
-  await elements.get('teamLoginBtn').listeners.click();
-  assert.equal(requests.length, 0);
-  const password = ' ' + randomBytes(16).toString('hex') + ' ';
-  elements.get('teamPw').value = password;
-  await elements.get('teamLoginBtn').listeners.click();
-  assert.deepEqual(requests, [{ url: '/api/auth/login', body: { login_id: (event.loginPrefix + '1'), password } }]);
+  await elements.get('modalGrid').children[0].listeners.click();
+  assert.deepEqual(requests, [{ url: '/api/auth/login', body: { login_id: (event.loginPrefix + '1') } }]);
   assert.equal(context.window.location.href, '/team.html');
 });
 
 
-test('scrypt hashes are salted and reject plaintext, wrong and malformed passwords', async () => {
-  const { hashPassword, verifyPassword, constantTimeEqual } = require('../api/lib/passwords');
+test('admin password comparison is exact', () => {
+  const { constantTimeEqual } = require('../api/lib/passwords');
   const password = randomBytes(24).toString('base64url');
-  const a = await hashPassword(password);
-  const b = await hashPassword(password);
-  assert.notEqual(a, b);
-  assert.ok(await verifyPassword(password, a));
-  assert.equal(await verifyPassword('wrong', a), false);
-  assert.equal(await verifyPassword(password, password), false);
-  assert.equal(await verifyPassword(password, 'scrypt$invalid$invalid'), false);
   assert.equal(constantTimeEqual(password, password), true);
+  assert.equal(constantTimeEqual(password, undefined), false);
   assert.equal(constantTimeEqual(password, 'wrong'), false);
 });
 test('login limits use a shared atomic DB counter and hide account identifiers', async () => {

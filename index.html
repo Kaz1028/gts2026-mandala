@@ -153,11 +153,6 @@ body {
     <span class="arrow">▼</span>
   </button>
 
-  <div class="field" style="margin-top:16px">
-    <label for="teamPw">チームのパスワード</label>
-    <input type="password" id="teamPw" placeholder="配布されたパスワード" autocomplete="current-password">
-  </div>
-  <button class="admin-btn" id="teamLoginBtn" disabled>チームとしてログイン</button>
   <div class="error" id="teamError" role="alert"></div>
 
   <div class="divider">管理者の方はこちら</div>
@@ -205,12 +200,7 @@ for (let i = 1; i <= window.EVENT_CONFIG.teamCount; i++) {
   btn.innerHTML = `${i}<span class="t-lbl">TEAM</span>`;
   btn.addEventListener('click', () => {
     selectedTeam = i;
-    closeModal();
-    document.getElementById('openModal').textContent = 'TEAM ' + i + ' を選択中（変更）';
-    document.getElementById('teamLoginBtn').disabled = false;
-    document.getElementById('teamPw').value = '';
-    document.getElementById('teamError').style.display = 'none';
-    document.getElementById('teamPw').focus();
+    return loginTeam();
   });
   modalGrid.appendChild(btn);
 }
@@ -226,28 +216,19 @@ function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
 }
 
-// チームログイン
-document.getElementById('teamLoginBtn').addEventListener('click', loginTeam);
-document.getElementById('teamPw').addEventListener('keydown', e => {
-  if (e.key === 'Enter') loginTeam();
-});
+// チームログイン（チーム番号を選ぶだけ。パスワードは不要）
 async function loginTeam() {
   const num = selectedTeam;
-  const password = document.getElementById('teamPw').value;
   const errEl = document.getElementById('teamError');
   errEl.style.display = 'none';
-  if (!num || !password) {
-    errEl.textContent = 'チームを選択し、配布されたパスワードを入力してください';
-    errEl.style.display = 'block';
-    return;
-  }
+  if (!num) return;
   closeModal();
   showLoading(`TEAM ${num} でログイン中...`);
   try {
     const res  = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login_id: window.EVENT_CONFIG.loginPrefix + num, password })
+      body: JSON.stringify({ login_id: window.EVENT_CONFIG.loginPrefix + num })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);

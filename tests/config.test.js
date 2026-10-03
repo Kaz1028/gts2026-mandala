@@ -57,11 +57,9 @@ test('mission validation catches changes that would break rendering or scoring',
 
 test('custom team count and prefix control seeds and admin boundaries', async () => {
   const event = {...sampleConfig,teamCount:50,loginPrefix:'JC_'};
-  const environment = {TEAM_CREDENTIALS_JSON:JSON.stringify([{team_number:50,password:'a-unique-test-password'}])};
-  const seeds = load('api/lib/config.js', {'./event-config': {config:event}}, {process:{env:environment}});
-  assert.equal(seeds.getSeedTeams()[0].login_id, 'JC_50');
-  environment.TEAM_CREDENTIALS_JSON = JSON.stringify([{team_number:51,password:'a-unique-test-password'}]);
-  assert.throws(seeds.getSeedTeams);
+  const seeds = load('api/lib/config.js', {'./event-config': {config:event}}, {process:{env:{}}});
+  assert.equal(seeds.getSeedTeams().length, 50);
+  assert.equal(seeds.getSeedTeams()[49].login_id, 'JC_50');
   const auth = {verifyToken:()=>({role:'admin'}),cors(){}};
   for (const file of ['api/admin-team-num.js','api/admin-reset.js','api/admin-delete-team.js']) {
     let calls = 0;
@@ -93,7 +91,7 @@ test('branding inserts text safely and updates colors and title', () => {
   assert.equal(colors['--red'],custom.primaryColor);
 });
 
-test('credential generator creates independent private outputs without logging secrets', () => {
+test('credential generator creates independent admin secrets without logging them', () => {
   const outputs = new Map(), logs = [];
   let folders=0;
   const fakeFS = {
@@ -103,17 +101,14 @@ test('credential generator creates independent private outputs without logging s
   };
   const overrides = {'node:fs':fakeFS,'../api/lib/event-config':{config:sampleConfig}};
   for(let i=0;i<2;i++) load('scripts/generate-credentials.cjs',overrides,{console:{log:s=>logs.push(s)}});
-  assert.equal(outputs.size,4);
+  assert.equal(outputs.size,2);
   const passwords=[];
   for (const [file,data] of outputs) {
     if (!file.endsWith('setup.env')) continue;
     const values = Object.fromEntries(data.trim().split('\n').map(line=>[line.slice(0,line.indexOf('=')),line.slice(line.indexOf('=')+1)]));
-    const teams = JSON.parse(values.TEAM_CREDENTIALS_JSON.slice(1,-1));
-    assert.equal(teams.length,sampleConfig.teamCount);
+    assert.ok(!('TEAM_CREDENTIALS_JSON' in values));
     assert.ok(values.JWT_SECRET.length>=32);
-    passwords.push(values.ADMIN_PASSWORD,...teams.map(t=>t.password));
-    const csv = outputs.get(path.join(path.dirname(file),'teams.csv'));
-    for(const t of teams) assert.ok(csv.includes(sampleConfig.loginPrefix+t.team_number+','+t.password));
+    passwords.push(values.ADMIN_PASSWORD);
     assert.ok(!logs.join('\n').includes(values.JWT_SECRET));
   }
   assert.equal(new Set(passwords).size,passwords.length);

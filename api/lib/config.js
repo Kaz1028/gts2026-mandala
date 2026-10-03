@@ -16,26 +16,11 @@ function getAuthConfig() {
   };
 }
 
+// Teams log in by choosing their number; no team passwords are issued.
 function getSeedTeams(maxTeams = event.teamCount) {
-  const raw = process.env.TEAM_CREDENTIALS_JSON;
-  if (!raw) return []; // Existing databases do not need seed credentials.
-  let teams;
-  try {
-    teams = JSON.parse(raw);
-  } catch {
-    throw new Error('TEAM_CREDENTIALS_JSON must be a JSON array');
-  }
-  if (!Array.isArray(teams)) throw new Error('TEAM_CREDENTIALS_JSON must be a JSON array');
-  const numbers = new Set();
-  return teams.map(team => {
-    if (!team || !Number.isInteger(team.team_number) || team.team_number < 1 ||
-        team.team_number > maxTeams || numbers.has(team.team_number) ||
-        typeof team.password !== 'string' || team.password.trim().length < 16) {
-      throw new Error(`TEAM_CREDENTIALS_JSON requires unique team numbers (1-${maxTeams}) and passwords of at least 16 characters`);
-    }
-    numbers.add(team.team_number);
-    return { team_number: team.team_number, login_id: event.loginPrefix + team.team_number, password: team.password };
-  });
+  return Array.from({ length: maxTeams }, (_, i) => ({
+    team_number: i + 1, login_id: event.loginPrefix + (i + 1),
+  }));
 }
 
 module.exports = { requireSecret, getAuthConfig, getSeedTeams };
