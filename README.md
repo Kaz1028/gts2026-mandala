@@ -11,6 +11,15 @@ A team-based mandala mission board with text/photo submissions, progress trackin
 - 得点・ランク・達成演出
 - 管理者による進捗確認、特典管理、提出内容の確認
 
+## 初めての方へ
+
+GitHubやプログラミングに詳しくない方向けに、アカウントの準備から公開・参加者への配布までをまとめました。
+
+- [初心者向けガイド（Web版）](BEGINNER_GUIDE.md)
+- [配布・印刷用PDF（14ページ）](output/pdf/jc-beginner-guide.pdf)
+
+各段階でコピーできるAI依頼文、完了の目印、困ったときの確認方法を掲載しています。
+
 ## 使い始める
 
 このリポジトリは**アプリのソースコード**です。運営中のイベントの参加者データ、写真、ログイン情報は含みません。自分のVercelプロジェクト・データベース・写真ストレージを用意して利用してください。GitHub PagesだけではAPIやDBは動きません。
