@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>マンダラチャートWebシステム(GTS2026 国際交流事業)</title>
+<style>
+  body { margin: 0; background: #fff; color: #222; font-family: "MS PGothic", "ＭＳ Ｐゴシック", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; font-size: 15px; line-height: 1.75; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: #555; margin: 0 0 24px; }
+  h2 { font-size: 17px; border-bottom: 1px solid #999; padding-bottom: 4px; margin: 32px 0 12px; }
+  .note { border: 1px solid #999; padding: 12px 16px; background: #f7f7f7; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #eee; width: 28%; font-weight: normal; }
+  .shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .shots figure { margin: 0; }
+  .shots .wide { grid-column: 1 / -1; }
+  figure img { width: 100%; border: 1px solid #bbb; display: block; }
+  figcaption { font-size: 13px; text-align: center; margin-top: 4px; }
+  ul.links { padding-left: 1.2em; }
+  footer { margin-top: 40px; font-size: 13px; color: #555; }
+  @media (max-width: 600px) { .shots { grid-template-columns: 1fr; } th { width: 38%; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>マンダラチャートWebシステム</h1>
+  <p class="sub">公益社団法人日本青年会議所 近畿地区京都ブロック協議会 国際連携委員会 2026年度 国際交流事業(シンガポール)</p>
+
+  <div class="note">
+    本ページは、2026年8月9日にシンガポールで実施した国際交流事業で使用したマンダラチャートWebシステムについて、次年度以降に同様の仕組みを再現するための資料として公開しているものです。
+    本事業の参加者の情報、回答及び写真は含まれていません。
+  </div>
+
+  <h2>1. システムの概要</h2>
+  <table>
+    <tr><th>目的</th><td>マンダラチャートの各ミッションについて、各チームが現地から記述、写真及び達成状況を登録し、運営側が進捗と得点を随時把握できるようにする。</td></tr>
+    <tr><th>構成</th><td>中心テーマである多文化共生と国際的視野の醸成の周囲に8つのテーマ(建国記念日、宗教、食文化、日常生活、言語、マナールール、ふれあい及びグローバルな視野の拡大)を置き、各テーマにミッションを設定。</td></tr>
+    <tr><th>当日の利用</th><td>全22チームがスマートフォンから利用し、記述による回答331件及び写真152枚が記録された。</td></tr>
+    <tr><th>利用方法</th><td>チームはチーム番号を選ぶだけでログインし、記述の入力、写真の撮影及び達成のチェックを行う。得点とランクは登録と同時に集計される。</td></tr>
+  </table>
+
+  <h2>2. 画面</h2>
+  <div class="shots">
+    <figure><img src="img/top.png" alt="トップ画面"><figcaption>トップ画面(チーム選択)</figcaption></figure>
+    <figure><img src="img/chart.png" alt="項目選択画面"><figcaption>項目選択画面</figcaption></figure>
+    <figure><img src="img/clear.png" alt="テーマ達成時の画面"><figcaption>テーマ達成時の画面</figcaption></figure>
+    <figure class="wide"><img src="img/mission.png" alt="ミッション内容の画面"><figcaption>ミッション内容の画面(例:食文化)</figcaption></figure>
+  </div>
+
+  <h2>3. 同様の仕組みを使う場合</h2>
+  <ul class="links">
+    <li><a href="https://github.com/Kaz1028/gts2026-mandala/blob/main/output/pdf/jc-beginner-guide.pdf">導入手順書(PDF)</a>: 準備するもの、設定の変更、公開及び当日の案内までの手順をまとめたものです。</li>
+    <li><a href="https://github.com/Kaz1028/gts2026-mandala">プログラム一式</a>: 団体名、チーム数及びミッションは、設定ファイルの書き換えのみで変更できます。</li>
+  </ul>
+
+  <footer>本ページ及びプログラムは、本事業のために委員会メンバーが作成したものです。</footer>
+</main>
+</body>
+</html>
